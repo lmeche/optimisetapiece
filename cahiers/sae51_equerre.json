@@ -10,7 +10,7 @@
   },
   "grille_fixation": {
     "face": "x = 20 (face avant de la plaque verticale du socle, épaisseur 20)",
-    "taraudage": "M10 (diamètre mineur relevé 8,376 mm), trous débouchants",
+    "taraudage": "M10 (diamètre mineur relevé 8,376 mm), trous débouchants ; vis M10 classe 8.8",
     "diametre_mineur": 8.376,
     "trous": [
       {
@@ -221,8 +221,19 @@
     ],
     "decoupe": "Jet d'eau ou laser (atelier IUT)",
     "pliage": "Plieuse numérique Colly (IUT)",
-    "rayon_pliage_interieur": "Hypothèse : égal à l'épaisseur, en attendant l'outillage Colly",
-    "longueur_pliage_max": null
+    "rayon_pliage_interieur": "Vés standard : V choisi le plus proche de 8 x épaisseur dans {6, 8, 10, 12, 16, 20, 25, 32, 40} ; rayon intérieur obtenu ≈ 0,16 x V ; aile minimale ≈ 0,7 x V",
+    "longueur_pliage_max": null,
+    "ves_disponibles": [
+      6,
+      8,
+      10,
+      12,
+      16,
+      20,
+      25,
+      32,
+      40
+    ]
   },
   "criteres": {
     "contrainte": "Pas de plastification à 1 t : von Mises < Re = 235 MPa sous 9 810 N",
@@ -236,14 +247,13 @@
   "hypotheses": [
     "1 t = 9 810 N, effort vertical vers le bas (compression sur la MTS)",
     "Effort réparti sur le disque Ø50 de l'adaptateur ; un trou Ø10 dans l'aile chargée reçoit le pion Ø9",
-    "Vis M10 classe 8.8, liaison vissée modélisée comme encastrement local autour de chaque vis",
+    "Liaison vissée (vis M10 classe 8.8, confirmé) modélisée comme encastrement local autour de chaque vis",
     "Soudures modélisées comme liaisons parfaites",
-    "Rayon intérieur de pliage = épaisseur",
-    "Coefficient de flambement minimal 3 (à valider)"
+    "Coefficient de flambement minimal 3 (à valider)",
+    "Liste des vés « principaux » supposée standard : à corriger si l'outillage Colly diffère"
   ],
   "questions_ouvertes": [
-    "Outillage Colly : vés, rayon de poinçon, longueur de pliage maximale",
     "Taille maximale de tôle en découpe",
-    "Classe et nombre de vis imposés ?"
+    "Longueur de pliage maximale de la Colly"
   ]
 }

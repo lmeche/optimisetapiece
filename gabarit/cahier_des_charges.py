@@ -59,6 +59,7 @@ class Procede(BaseModel):
     pliage: str
     rayon_pliage_interieur: str
     longueur_pliage_max: float | None = None
+    ves_disponibles: list[float] = []
 
 
 class Criteres(BaseModel):
