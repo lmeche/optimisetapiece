@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+resultats/
+*.frd
+*.dat
+*.sta
+*.cvg
+*.12d
