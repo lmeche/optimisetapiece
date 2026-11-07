@@ -28,6 +28,7 @@ class Resultat:
     traction_vis_max: float = math.nan  # N
     noeuds_contact: int = 0
     dossier: str = ""
+    point_sigma_utile: tuple[float, float, float] | None = None  # où se trouve sigma_max_utile (mm)
 
     @property
     def respecte(self) -> bool:
@@ -46,13 +47,16 @@ def evaluer(concept, cdc: CahierDesCharges, taille: float = 6.0, dossier: Path |
 
     vm = res.von_mises()
     co = res.coords
-    xd = 20.0 + concept.t / 2
+    xd, td = info["x_dos"], info["t_dos"]
+
     def singulier(p):
-        if abs(p[0] - xd) <= concept.t and any(np.hypot(p[1] - y, p[2] - z) <= 2 * 8.0 for y, z in info["trous"]):
+        if abs(p[0] - xd) <= td and any(np.hypot(p[1] - y, p[2] - z) <= 2 * 8.0 for y, z in info["trous"]):
             return True
-        return np.hypot(p[0] - info["x_charge"], p[1]) <= 30.0 and p[2] > concept.z_dessus - concept.t
+        return (np.hypot(p[0] - info["x_charge"], p[1]) <= 30.0
+                and abs(p[2] - info["z_charge"]) <= info["t_charge"])
     sigma_max = max(vm.values())
-    sigma_utile = max(v for n, v in vm.items() if not singulier(co[n]))
+    n_pic = max((n for n in vm if not singulier(co[n])), key=vm.get)
+    sigma_utile = vm[n_pic]
     ch = cdc.chargements[0]
     fleche = -float(np.mean([res.u_noeuds[n][2] for n in info["noeuds_charge"]]))
 
@@ -78,7 +82,8 @@ def evaluer(concept, cdc: CahierDesCharges, taille: float = 6.0, dossier: Path |
     effort = ch.force * cdc.materiau.Re / sigma_utile
     masse = concept.masse(cdc.materiau.rho)
     return Resultat(True, [], masse, sigma_max, sigma_utile, fleche, facteur, effort,
-                    masse / (effort / 1000), traction, len(modele.appuis_x), str(dossier))
+                    masse / (effort / 1000), traction, len(modele.appuis_x), str(dossier),
+                    tuple(round(float(c), 1) for c in co[n_pic]))
 
 
 def _contact(modele, info, dossier: Path, iterations: int, nom: str = "contact") -> None:

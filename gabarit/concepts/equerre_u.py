@@ -126,7 +126,8 @@ class EquerreU:
         f = np.array(ch.direction) * ch.force / len(disque)
         forces = {n: tuple(f) for n in disque}
         dos = {n for n, (x, y, z) in noeuds.items() if abs(x - xd) < 1e-6} - encastres
-        info = {"trous": trous, "dos": dos, "x_charge": x_charge, "noeuds_charge": disque}
+        info = {"trous": trous, "dos": dos, "x_charge": x_charge, "noeuds_charge": disque,
+                "x_dos": xd, "t_dos": self.t, "z_charge": self.z_dessus, "t_charge": self.t}
         return ModeleCoque(noeuds, elements, self.t, materiau, encastres, forces), info
 
     def parametres(self) -> dict:

@@ -12,7 +12,8 @@ Plan d'action : voir le document « Gabarit : plan d'action ».
 - [x] Phase 0 : cahier des charges structuré de la SAE 5.1 (`cahiers/sae51_equerre.json`, cotes relevées dans les STEP du socle et de l'adaptateur)
 - [x] Phase 2 : équerre en U de référence calculée sur la vraie grille (`exemples/phase2_equerre_u.py`)
 - [x] Phase 3 : moteur d'optimisation validé (`tests/valider_optimiseur.py`) et appliqué à l'équerre en U (`exemples/phase3_optimisation.py`)
-- [ ] Phase 4 et suivantes
+- [x] Phase 4 : format de concept déclaratif, concept « L + V » optimisé, IA Concepteur (`exemples/concevoir.py`)
+- [ ] Phase 5 et suivantes : IA Analyste, compte rendu (croquis, 3D, STEP), recoupement CATIA
 
 ## Phase 2 : ce que fait une évaluation (`gabarit/evaluation.py`)
 
@@ -71,3 +72,49 @@ Résultat : sur 2 x 96 essais, **aucune équerre en U ne tient 1 t**. L'effort t
 4 à 5 kN à 5 mm d'épaisseur, quelle que soit la masse. La zone critique est le dessus, qui fléchit
 localement sous l'appui Ø50 (environ 600 MPa sous 9 810 N, valeur stable de 8 à 3 mm de maille).
 Ce concept d'une seule tôle a besoin d'un renfort local (deuxième pièce soudée), ce qui relève de la phase 4.
+
+## Phase 4 : concepts déclaratifs et IA Concepteur
+
+### Le format (`gabarit/concepts/format.py`)
+
+Un concept est un fichier JSON (exemple : `concepts/sae51_L_V.json`) : des variables classées
+(épaisseur de l'atelier, choix discret, réel borné, fraction, retour optionnel), des dérivées
+(expressions évaluées dans l'ordre), des tôles faites de faces planes (surfaces moyennes), des retours,
+des soudures, la face de fixation, la face d'appui et les justifications de chaque choix.
+Le même fichier sert à l'IA (qui l'écrit), à l'optimiseur (qui fait varier les variables) et au calcul.
+
+- Deux faces d'une même tôle qui partagent une arête forment un pli : angle intérieur >= 30° et aile
+  >= 0,7 x vé (vé standard le plus proche de 8 x t) vérifiés.
+- Des tôles qui se touchent sont soudées (Gmsh les découpe ensemble, jonctions en T comprises) ; chaque
+  soudure déclarée est contrôlée (arête commune d'au moins 10 mm ou doublage), l'assemblage doit être
+  d'un seul tenant.
+- Deux faces coplanaires superposées forment un doublage : les épaisseurs s'additionnent.
+- Retour optionnel : 0 (pas de pli) ou une hauteur entre l'aile minimale et un maximum. L'optimiseur
+  décide si le bord vaut sa masse (c'est l'idée du « pli à 0 mm partout »).
+
+### Le concept « L + V »
+
+Tôle en L en haut (dos vissé, dessus qui reçoit l'appui) et tôle en V dessous (jambe doublée contre
+le dos, diagonale soudée sous le dessus) : dos, dessus et diagonale forment un triangle.
+14 variables dont 4 retours optionnels (côtés et bout du dessus, bords de la diagonale, bords du dos).
+Optimisation : `python exemples/optimiser_concept.py concepts/sae51_L_V.json 4`.
+
+RESULTATS_LV
+
+### L'IA Concepteur (`gabarit/ia/`)
+
+`python exemples/concevoir.py 3` (clé dans `ANTHROPIC_API_KEY`) : Claude reçoit le cahier des
+charges, le format, les règles de fabrication, ce qu'on a appris des concepts précédents et le L + V en
+exemple, puis propose des formes générales. Il contrôle lui-même chaque concept avec l'outil
+`verifier_concept` (géométrie au point central et sur 16 tirages aléatoires, calcul rapide au
+point central avec la zone la plus chargée), corrige, et n'enregistre (`enregistrer_concept`) qu'un
+concept qui passe les contrôles. Les concepts arrivent dans `concepts/ia/`, le journal (raisonnement
+résumé, appels, bilan) dans `resultats/concepteur/<date>/journal.md`.
+
+Réglages : modèle `claude-opus-5-5`, réflexion adaptative, effort `high` (`--effort` pour changer),
+relais automatique vers un modèle de secours si une requête est déclinée (`fallbacks: "default"`),
+cache du prompt. Les outils de contrôle (`gabarit/ia/outils.py`) ne dépendent pas du fournisseur
+d'IA : un modèle open source pourra s'y brancher.
+
+Test hors ligne (sans clé ni réseau, faux serveur local) : `python tests/tester_concepteur.py`.
+

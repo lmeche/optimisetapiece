@@ -4,3 +4,4 @@ pydantic>=2
 matplotlib>=3.8
 optuna>=4
 scipy>=1.11
+anthropic>=2.6
