@@ -104,7 +104,7 @@ def lancer(modele: ModeleCoque, dossier: Path, nom: str = "job", analyse: str = 
     dossier.mkdir(parents=True, exist_ok=True)
     (dossier / f"{nom}.frd").unlink(missing_ok=True)
     ecrire_inp(modele, dossier / f"{nom}.inp", analyse, n_modes, fichiers)
-    env = dict(os.environ, OMP_NUM_THREADS=str(os.cpu_count() or 1))
+    env = dict(os.environ, OMP_NUM_THREADS=os.environ.get("GABARIT_THREADS", str(os.cpu_count() or 1)))
     proc = subprocess.run(
         [trouver_ccx(), "-i", nom], cwd=dossier, capture_output=True, text=True, timeout=3600, env=env
     )

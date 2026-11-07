@@ -11,7 +11,8 @@ Plan d'action : voir le document « Gabarit : plan d'action ».
 - [x] Phase 1 : chaîne Gmsh + CalculiX validée contre la RDM (flexion, contrainte, flambement d'Euler)
 - [x] Phase 0 : cahier des charges structuré de la SAE 5.1 (`cahiers/sae51_equerre.json`, cotes relevées dans les STEP du socle et de l'adaptateur)
 - [x] Phase 2 : équerre en U de référence calculée sur la vraie grille (`exemples/phase2_equerre_u.py`)
-- [ ] Phase 3 et suivantes
+- [x] Phase 3 : moteur d'optimisation validé (`tests/valider_optimiseur.py`) et appliqué à l'équerre en U (`exemples/phase3_optimisation.py`)
+- [ ] Phase 4 et suivantes
 
 ## Phase 2 : ce que fait une évaluation (`gabarit/evaluation.py`)
 
@@ -50,3 +51,23 @@ Le script crée l'environnement `.venv`, repère `ccx.exe` et lance la validatio
 | Flèche en bout sous 1000 N | 21,756 mm | 21,777 mm | -0,10 % |
 | Contrainte à mi-longueur | 137,3 MPa | 136,7 MPa | +0,46 % |
 | Charge critique de flambement | 37 773 N | 37 910 N (Euler) | -0,36 % |
+
+## Phase 3 : optimisation (`gabarit/optimisation.py`)
+
+1. Plan d'expériences quasi aléatoire (Sobol) pour couvrir l'espace des variables.
+2. Optimisation bayésienne sous contraintes (Optuna, TPE).
+3. Affinage local COBYLA sur les variables continues depuis le meilleur point faisable.
+
+Évaluations en parallèle (processus séparés), toutes enregistrées dans une base SQLite.
+
+Validation (`python tests/valider_optimiseur.py`) : poutre rectangulaire de section minimale sous
+contrainte de flexion, optimum analytique retrouvé à 0,01 % (graines 0 à 3).
+
+Étude SAE (`gabarit/etudes/sae51_equerre_u.py`) : 7 variables (épaisseur, écart des vis, largeur,
+hauteur du dessus, bas du dos, hauteurs des ailes), objectif masse / effort tenu, contraintes : pas de
+plastification à 1 t, flambement >= 3, traction des vis <= 33,4 kN (M10 8.8).
+
+Résultat : sur 2 x 96 essais, **aucune équerre en U ne tient 1 t**. L'effort tenu plafonne vers
+4 à 5 kN à 5 mm d'épaisseur, quelle que soit la masse. La zone critique est le dessus, qui fléchit
+localement sous l'appui Ø50 (environ 600 MPa sous 9 810 N, valeur stable de 8 à 3 mm de maille).
+Ce concept d'une seule tôle a besoin d'un renfort local (deuxième pièce soudée), ce qui relève de la phase 4.
