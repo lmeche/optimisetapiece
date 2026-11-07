@@ -1,0 +1,249 @@
+{
+  "nom": "SAE 5.1 - Challenge équerre",
+  "source": "Sujet SAE_5_1_Equerre.docx + socle.stp + Adaptateur 100kN.stp (cotes relevées dans les STEP)",
+  "materiau": {
+    "nom": "S235",
+    "E": 210000.0,
+    "nu": 0.3,
+    "Re": 235.0,
+    "rho": 7850.0
+  },
+  "grille_fixation": {
+    "face": "x = 20 (face avant de la plaque verticale du socle, épaisseur 20)",
+    "taraudage": "M10 (diamètre mineur relevé 8,376 mm), trous débouchants",
+    "diametre_mineur": 8.376,
+    "trous": [
+      {
+        "y": -60.0,
+        "z": 80.0
+      },
+      {
+        "y": -60.0,
+        "z": 100.0
+      },
+      {
+        "y": -60.0,
+        "z": 120.0
+      },
+      {
+        "y": -60.0,
+        "z": 140.0
+      },
+      {
+        "y": -60.0,
+        "z": 160.0
+      },
+      {
+        "y": -60.0,
+        "z": 180.0
+      },
+      {
+        "y": -40.0,
+        "z": 80.0
+      },
+      {
+        "y": -40.0,
+        "z": 100.0
+      },
+      {
+        "y": -40.0,
+        "z": 120.0
+      },
+      {
+        "y": -40.0,
+        "z": 140.0
+      },
+      {
+        "y": -40.0,
+        "z": 160.0
+      },
+      {
+        "y": -40.0,
+        "z": 180.0
+      },
+      {
+        "y": -20.0,
+        "z": 80.0
+      },
+      {
+        "y": -20.0,
+        "z": 100.0
+      },
+      {
+        "y": -20.0,
+        "z": 120.0
+      },
+      {
+        "y": -20.0,
+        "z": 140.0
+      },
+      {
+        "y": -20.0,
+        "z": 160.0
+      },
+      {
+        "y": -20.0,
+        "z": 180.0
+      },
+      {
+        "y": 0.0,
+        "z": 80.0
+      },
+      {
+        "y": 0.0,
+        "z": 100.0
+      },
+      {
+        "y": 0.0,
+        "z": 120.0
+      },
+      {
+        "y": 0.0,
+        "z": 140.0
+      },
+      {
+        "y": 0.0,
+        "z": 160.0
+      },
+      {
+        "y": 0.0,
+        "z": 180.0
+      },
+      {
+        "y": 20.0,
+        "z": 80.0
+      },
+      {
+        "y": 20.0,
+        "z": 100.0
+      },
+      {
+        "y": 20.0,
+        "z": 120.0
+      },
+      {
+        "y": 20.0,
+        "z": 140.0
+      },
+      {
+        "y": 20.0,
+        "z": 160.0
+      },
+      {
+        "y": 20.0,
+        "z": 180.0
+      },
+      {
+        "y": 40.0,
+        "z": 80.0
+      },
+      {
+        "y": 40.0,
+        "z": 100.0
+      },
+      {
+        "y": 40.0,
+        "z": 120.0
+      },
+      {
+        "y": 40.0,
+        "z": 140.0
+      },
+      {
+        "y": 40.0,
+        "z": 160.0
+      },
+      {
+        "y": 40.0,
+        "z": 180.0
+      },
+      {
+        "y": 60.0,
+        "z": 80.0
+      },
+      {
+        "y": 60.0,
+        "z": 100.0
+      },
+      {
+        "y": 60.0,
+        "z": 120.0
+      },
+      {
+        "y": 60.0,
+        "z": 140.0
+      },
+      {
+        "y": 60.0,
+        "z": 160.0
+      },
+      {
+        "y": 60.0,
+        "z": 180.0
+      }
+    ],
+    "utilisation": "Grille 7 colonnes (y = -60 à 60, pas 20) x 6 rangées (z = 80 à 180, pas 20). Le concept choisit quels trous utiliser."
+  },
+  "encombrement": {
+    "description": "Entre les deux nervures du socle (|y| de 80 à 100), au-dessus de la semelle (dessus à z = 0), semelle longue jusqu'à x = 350.",
+    "y_min": -80.0,
+    "y_max": 80.0,
+    "z_min": 0.0,
+    "x_max": 350.0
+  },
+  "chargements": [
+    {
+      "nom": "Essai MTS 1 t",
+      "force": 9810.0,
+      "direction": [
+        0.0,
+        0.0,
+        -1.0
+      ],
+      "point_application": null,
+      "distance_encastrement": 300.0,
+      "interface": "Adaptateur 100 kN : face d'appui plane Ø50, pion de centrage Ø9 x 10 mm sous la face. Axe de l'effort à x = 20 + 300 = 320."
+    }
+  ],
+  "procede": {
+    "nombre_pieces_max": 2,
+    "assemblage": [
+      "soudure"
+    ],
+    "epaisseurs_disponibles": [
+      1.0,
+      1.2,
+      1.5,
+      2.0,
+      3.0,
+      4.0,
+      5.0
+    ],
+    "decoupe": "Jet d'eau ou laser (atelier IUT)",
+    "pliage": "Plieuse numérique Colly (IUT)",
+    "rayon_pliage_interieur": "Hypothèse : égal à l'épaisseur, en attendant l'outillage Colly",
+    "longueur_pliage_max": null
+  },
+  "criteres": {
+    "contrainte": "Pas de plastification à 1 t : von Mises < Re = 235 MPa sous 9 810 N",
+    "objectif": "Minimiser masse / effort tenu, avec effort tenu = effort de première plastification (calcul linéaire : 9 810 x Re / sigma_max)",
+    "coefficient_flambement_min": 3.0,
+    "autres": [
+      "Fixation compatible avec la grille M10 du socle",
+      "Pièce ne touchant ni la semelle ni les nervures sous charge"
+    ]
+  },
+  "hypotheses": [
+    "1 t = 9 810 N, effort vertical vers le bas (compression sur la MTS)",
+    "Effort réparti sur le disque Ø50 de l'adaptateur ; un trou Ø10 dans l'aile chargée reçoit le pion Ø9",
+    "Vis M10 classe 8.8, liaison vissée modélisée comme encastrement local autour de chaque vis",
+    "Soudures modélisées comme liaisons parfaites",
+    "Rayon intérieur de pliage = épaisseur",
+    "Coefficient de flambement minimal 3 (à valider)"
+  ],
+  "questions_ouvertes": [
+    "Outillage Colly : vés, rayon de poinçon, longueur de pliage maximale",
+    "Taille maximale de tôle en découpe",
+    "Classe et nombre de vis imposés ?"
+  ]
+}

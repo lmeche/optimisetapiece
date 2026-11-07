@@ -9,7 +9,7 @@ Plan d'action : voir le document « Gabarit : plan d'action ».
 ## État
 
 - [x] Phase 1 : chaîne Gmsh + CalculiX validée contre la RDM (flexion, contrainte, flambement d'Euler)
-- [ ] Phase 0 : cahier des charges structuré de la SAE 5.1
+- [x] Phase 0 : cahier des charges structuré de la SAE 5.1 (`cahiers/sae51_equerre.json`, cotes relevées dans les STEP du socle et de l'adaptateur)
 - [ ] Phase 2 et suivantes
 
 ## Installation (Windows)
