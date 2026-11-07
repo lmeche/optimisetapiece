@@ -99,7 +99,25 @@ le dos, diagonale soudée sous le dessus) : dos, dessus et diagonale forment un 
 14 variables dont 4 retours optionnels (côtés et bout du dessus, bords de la diagonale, bords du dos).
 Optimisation : `python exemples/optimiser_concept.py concepts/sae51_L_V.json 4`.
 
-RESULTATS_LV
+Résultat (168 essais, 46 faisables, 1 h sur 4 coeurs) : **le L + V tient 1 t**, l'équerre en U n'y arrivait pas.
+
+| Optimum (tôles 5 + 5 mm) | Maille 8 mm (exploration) | 6 mm | 4 mm |
+| --- | --- | --- | --- |
+| Masse | 4,38 kg | 4,38 kg | 4,38 kg |
+| Contrainte utile sous 9 810 N | 138 MPa | 154 MPa | 183 MPa |
+| Effort tenu avant plastification | 16,7 kN | 15,0 kN | 12,6 kN |
+| Facteur de flambement | 3,06 | 3,12 | 3,01 |
+| Traction maxi par vis | 10,9 kN | 11,0 kN | 10,8 kN |
+| Masse / effort tenu | 0,263 kg/kN | 0,292 kg/kN | 0,348 kg/kN |
+
+Géométrie : largeur 148 mm, dessus à z = 192 mm, dos de z = 97 à 192 avec retours de 33 mm sur ses
+bords, vis dans les colonnes y = ±60, V de 102 mm de large, pied à z = 59, diagonale soudée sous le
+dessus en x = 313 (juste avant l'appui). La contrainte de flambement (>= 3) est celle qui limite :
+il reste de la marge en plastification. La contrainte utile augmente quand la maille s'affine
+(extrémités de la soudure diagonale / dessus) : on retient la valeur à 4 mm.
+
+Une seconde passe (`concepts/sae51_L_V_mince.json`) explore les tôles de 2 à 4 mm, zone que la
+première passe a peu visitée et où des L + V de 3,3 kg tenaient 10,8 kN mais flambaient.
 
 ### L'IA Concepteur (`gabarit/ia/`)
 
