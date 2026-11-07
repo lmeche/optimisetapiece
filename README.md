@@ -116,8 +116,11 @@ dessus en x = 313 (juste avant l'appui). La contrainte de flambement (>= 3) est 
 il reste de la marge en plastification. La contrainte utile augmente quand la maille s'affine
 (extrémités de la soudure diagonale / dessus) : on retient la valeur à 4 mm.
 
-Une seconde passe (`concepts/sae51_L_V_mince.json`) explore les tôles de 2 à 4 mm, zone que la
-première passe a peu visitée et où des L + V de 3,3 kg tenaient 10,8 kN mais flambaient.
+Seconde passe sur tôles de 2 à 4 mm (`concepts/sae51_L_V_mince.json`, 128 essais) : aucun L + V
+faisable, le meilleur tient 8,1 kN (4 + 4 mm, 1,6 kg, version étroite). Repris à la main en 5 + 5 mm,
+ce L + V étroit pèse 2,0 kg et tient 12,4 kN, mais flambe à 1,1 x 1 t ; des retours de 28 mm sur la
+diagonale ne l'aident pas (ils créent de nouvelles concentrations à leurs coins). Piste pour la suite :
+un raidissement contre le flambement de la version étroite, qui gagnerait plus de 2 kg.
 
 ### L'IA Concepteur (`gabarit/ia/`)
 
