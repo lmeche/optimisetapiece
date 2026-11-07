@@ -34,6 +34,7 @@ class ModeleCoque:
     materiau: Materiau
     encastres: set[int] = field(default_factory=set)  # noeuds bloqués en 6 ddl
     forces: dict[int, tuple[float, float, float]] = field(default_factory=dict)  # noeud -> (Fx, Fy, Fz)
+    appuis_x: set[int] = field(default_factory=set)  # noeuds bloqués en X seulement (contact actif)
 
 
 def trouver_ccx() -> str:
@@ -47,7 +48,8 @@ def trouver_ccx() -> str:
     raise FileNotFoundError("CalculiX (ccx) introuvable : l'ajouter au PATH ou définir GABARIT_CCX.")
 
 
-def ecrire_inp(modele: ModeleCoque, chemin: Path, analyse: str = "statique", n_modes: int = 3) -> None:
+def ecrire_inp(modele: ModeleCoque, chemin: Path, analyse: str = "statique", n_modes: int = 3,
+               fichiers: bool = True) -> None:
     m = modele
     lignes = ["*HEADING", "Gabarit", "*NODE, NSET=NALL"]
     lignes += [f"{i}, {x:.6g}, {y:.6g}, {z:.6g}" for i, (x, y, z) in sorted(m.noeuds.items())]
@@ -65,6 +67,9 @@ def ecrire_inp(modele: ModeleCoque, chemin: Path, analyse: str = "statique", n_m
         "*BOUNDARY",
         "ENCASTRE, 1, 6",
     ]
+    if m.appuis_x:
+        lignes[lignes.index("*BOUNDARY"):lignes.index("*BOUNDARY")] = ["*NSET, NSET=APPUI"] + _par_lignes(sorted(m.appuis_x))
+        lignes.append("APPUI, 1, 1")
     if analyse == "statique":
         lignes.append("*STEP")
         lignes.append("*STATIC")
@@ -79,7 +84,13 @@ def ecrire_inp(modele: ModeleCoque, chemin: Path, analyse: str = "statique", n_m
         for ddl, val in enumerate(f, start=1):
             if val != 0.0:
                 lignes.append(f"{n}, {ddl}, {val:.9g}")
-    lignes += ["*NODE FILE", "U", "*EL FILE", "S", "*END STEP"]
+    if fichiers:
+        lignes += ["*NODE FILE", "U", "*EL FILE", "S"]
+    if analyse == "statique":
+        lignes += ["*NODE PRINT, NSET=NALL", "U", "*NODE PRINT, NSET=ENCASTRE", "RF"]
+        if m.appuis_x:
+            lignes += ["*NODE PRINT, NSET=APPUI", "RF"]
+    lignes.append("*END STEP")
     chemin.write_text("\n".join(lignes) + "\n")
 
 
@@ -87,11 +98,15 @@ def _par_lignes(ids: list[int], n: int = 12) -> list[str]:
     return [", ".join(str(i) for i in ids[k : k + n]) for k in range(0, len(ids), n)]
 
 
-def lancer(modele: ModeleCoque, dossier: Path, nom: str = "job", analyse: str = "statique", n_modes: int = 3):
+def lancer(modele: ModeleCoque, dossier: Path, nom: str = "job", analyse: str = "statique", n_modes: int = 3,
+           fichiers: bool = True):
+    """Lance CalculiX. fichiers=False : pas de .frd (plus rapide), seuls le .dat et les facteurs sont lus."""
     dossier.mkdir(parents=True, exist_ok=True)
-    ecrire_inp(modele, dossier / f"{nom}.inp", analyse, n_modes)
+    (dossier / f"{nom}.frd").unlink(missing_ok=True)
+    ecrire_inp(modele, dossier / f"{nom}.inp", analyse, n_modes, fichiers)
+    env = dict(os.environ, OMP_NUM_THREADS=str(os.cpu_count() or 1))
     proc = subprocess.run(
-        [trouver_ccx(), "-i", nom], cwd=dossier, capture_output=True, text=True, timeout=3600
+        [trouver_ccx(), "-i", nom], cwd=dossier, capture_output=True, text=True, timeout=3600, env=env
     )
     if proc.returncode != 0 or "*ERROR" in proc.stdout:
         raise RuntimeError(f"CalculiX a échoué :\n{proc.stdout[-3000:]}\n{proc.stderr[-2000:]}")
@@ -104,8 +119,10 @@ class Resultats:
     def __init__(self, frd: Path, dat: Path):
         self.coords: dict[int, np.ndarray] = {}
         self.blocs: list[tuple[str, dict[int, np.ndarray]]] = []
-        self._lire_frd(frd)
+        if frd.exists():
+            self._lire_frd(frd)
         self.facteurs_flambement = _lire_facteurs(dat)
+        self.u_noeuds, self.reactions = _lire_dat_statique(dat)
 
     def _lire_frd(self, chemin: Path) -> None:
         lignes = chemin.read_text().splitlines()
@@ -158,3 +175,26 @@ def _lire_facteurs(dat: Path) -> list[float]:
         return []
     bloc = texte.split("B U C K L I N G")[1]
     return [float(m.group(2)) for m in re.finditer(r"^\s+(\d+)\s+([-\d.Ee+]+)\s*$", bloc, re.M)]
+
+
+def _lire_dat_statique(dat: Path) -> tuple[dict[int, np.ndarray], dict[str, dict[int, np.ndarray]]]:
+    """Déplacements des noeuds d'origine (coques non expansées) et réactions par jeu de noeuds."""
+    u: dict[int, np.ndarray] = {}
+    rf: dict[str, dict[int, np.ndarray]] = {}
+    if not dat.exists():
+        return u, rf
+    cible = None
+    for ligne in dat.read_text().splitlines():
+        if "displacements (vx,vy,vz) for set" in ligne:
+            cible = u
+            continue
+        mo = re.search(r"forces \(fx,fy,fz\) for set (\S+)", ligne)
+        if mo:
+            cible = rf.setdefault(mo.group(1), {})
+            continue
+        champs = ligne.split()
+        if cible is not None and len(champs) == 4 and champs[0].isdigit():
+            cible[int(champs[0])] = np.array([float(c) for c in champs[1:]])
+        elif champs:
+            cible = None
+    return u, rf
