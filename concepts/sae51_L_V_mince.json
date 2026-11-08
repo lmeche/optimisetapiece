@@ -1,0 +1,338 @@
+{
+  "nom": "L + V, tôles de 3 à 4 mm (seconde passe ciblée)",
+  "description": "Même concept que sae51_L_V.json, épaisseurs restreintes à 3-4 mm pour la tôle en L et 2-4 mm pour le V : la première optimisation s'est concentrée sur 5 + 5 mm et a laissé peu exploré la zone plus mince où les retours peuvent compenser le flambement.",
+  "variables": {
+    "t_L": {
+      "type": "choix",
+      "valeurs": [
+        3,
+        4
+      ]
+    },
+    "t_V": {
+      "type": "choix",
+      "valeurs": [
+        2,
+        3,
+        4
+      ]
+    },
+    "ecart_vis": {
+      "type": "choix",
+      "valeurs": [
+        0,
+        20,
+        40,
+        60
+      ]
+    },
+    "u_b": {
+      "type": "fraction"
+    },
+    "z_dessus": {
+      "type": "reel",
+      "min": 100,
+      "max": 200
+    },
+    "u_bas": {
+      "type": "fraction"
+    },
+    "u_pied": {
+      "type": "fraction"
+    },
+    "u_jambe": {
+      "type": "fraction"
+    },
+    "x_diag": {
+      "type": "reel",
+      "min": 120,
+      "max": 345
+    },
+    "u_bv": {
+      "type": "fraction"
+    },
+    "h_ret_cotes": {
+      "type": "retour",
+      "tole": "L",
+      "max": 60
+    },
+    "h_ret_bout": {
+      "type": "retour",
+      "tole": "L",
+      "max": 40
+    },
+    "h_ret_diag": {
+      "type": "retour",
+      "tole": "V",
+      "max": 50
+    },
+    "h_ret_dos": {
+      "type": "retour",
+      "tole": "L",
+      "max": 40
+    }
+  },
+  "derivees": {
+    "xd": "X_FACE + t_L / 2",
+    "x_bout": "X_MAX",
+    "b_min": "max(2 * ecart_vis + 2 * 12 + t_L, 44)",
+    "b": "b_min + u_b * (2 * Y_MAX - 10 - t_L - b_min)",
+    "z_bas": "40 + u_bas * (z_dessus - 80)",
+    "z_pied": "15 + u_pied * (z_dessus - 60 - 15)",
+    "z_jambe_min": "max(z_pied + aile_min(t_V), z_bas + 15)",
+    "h_jambe": "z_jambe_min - z_pied + u_jambe * max(0, z_dessus - 10 - z_jambe_min)",
+    "bv": "(b - 2 * (t_L + 1)) * (0.4 + 0.6 * u_bv)",
+    "dx": "x_diag - xd",
+    "dz": "z_dessus - z_pied",
+    "ldiag": "sqrt(dx * dx + dz * dz)"
+  },
+  "toles": [
+    {
+      "nom": "L",
+      "epaisseur": "t_L",
+      "faces": {
+        "dos": [
+          [
+            "xd",
+            "-b/2",
+            "z_bas"
+          ],
+          [
+            "xd",
+            "b/2",
+            "z_bas"
+          ],
+          [
+            "xd",
+            "b/2",
+            "z_dessus"
+          ],
+          [
+            "xd",
+            "-b/2",
+            "z_dessus"
+          ]
+        ],
+        "dessus": [
+          [
+            "xd",
+            "-b/2",
+            "z_dessus"
+          ],
+          [
+            "xd",
+            "b/2",
+            "z_dessus"
+          ],
+          [
+            "x_bout",
+            "b/2",
+            "z_dessus"
+          ],
+          [
+            "x_bout",
+            "-b/2",
+            "z_dessus"
+          ]
+        ],
+        "retour_dos_g": {
+          "si": "h_ret_dos * (z_dessus - h_ret_cotes - z_bas - aile_min(t_L))",
+          "points": [
+            [
+              "xd",
+              "-b/2",
+              "z_bas"
+            ],
+            [
+              "xd + h_ret_dos",
+              "-b/2",
+              "z_bas"
+            ],
+            [
+              "xd + h_ret_dos",
+              "-b/2",
+              "z_dessus - h_ret_cotes"
+            ],
+            [
+              "xd",
+              "-b/2",
+              "z_dessus - h_ret_cotes"
+            ]
+          ]
+        },
+        "retour_dos_d": {
+          "si": "h_ret_dos * (z_dessus - h_ret_cotes - z_bas - aile_min(t_L))",
+          "points": [
+            [
+              "xd",
+              "b/2",
+              "z_bas"
+            ],
+            [
+              "xd + h_ret_dos",
+              "b/2",
+              "z_bas"
+            ],
+            [
+              "xd + h_ret_dos",
+              "b/2",
+              "z_dessus - h_ret_cotes"
+            ],
+            [
+              "xd",
+              "b/2",
+              "z_dessus - h_ret_cotes"
+            ]
+          ]
+        }
+      },
+      "retours": [
+        {
+          "nom": "retour_cote_g",
+          "face": "dessus",
+          "arete": [
+            3,
+            0
+          ],
+          "hauteur": "h_ret_cotes",
+          "direction": [
+            0,
+            0,
+            -1
+          ]
+        },
+        {
+          "nom": "retour_cote_d",
+          "face": "dessus",
+          "arete": [
+            1,
+            2
+          ],
+          "hauteur": "h_ret_cotes",
+          "direction": [
+            0,
+            0,
+            -1
+          ]
+        },
+        {
+          "nom": "retour_bout",
+          "face": "dessus",
+          "arete": [
+            2,
+            3
+          ],
+          "hauteur": "h_ret_bout",
+          "direction": [
+            0,
+            0,
+            -1
+          ]
+        }
+      ]
+    },
+    {
+      "nom": "V",
+      "epaisseur": "t_V",
+      "faces": {
+        "jambe": [
+          [
+            "xd",
+            "-bv/2",
+            "z_pied"
+          ],
+          [
+            "xd",
+            "bv/2",
+            "z_pied"
+          ],
+          [
+            "xd",
+            "bv/2",
+            "z_pied + h_jambe"
+          ],
+          [
+            "xd",
+            "-bv/2",
+            "z_pied + h_jambe"
+          ]
+        ],
+        "diag": [
+          [
+            "xd",
+            "-bv/2",
+            "z_pied"
+          ],
+          [
+            "x_diag",
+            "-bv/2",
+            "z_dessus"
+          ],
+          [
+            "x_diag",
+            "bv/2",
+            "z_dessus"
+          ],
+          [
+            "xd",
+            "bv/2",
+            "z_pied"
+          ]
+        ]
+      },
+      "retours": [
+        {
+          "nom": "retour_diag_g",
+          "face": "diag",
+          "arete": [
+            0,
+            1
+          ],
+          "hauteur": "h_ret_diag",
+          "direction": [
+            "dz / ldiag",
+            0,
+            "-dx / ldiag"
+          ]
+        },
+        {
+          "nom": "retour_diag_d",
+          "face": "diag",
+          "arete": [
+            2,
+            3
+          ],
+          "hauteur": "h_ret_diag",
+          "direction": [
+            "dz / ldiag",
+            0,
+            "-dx / ldiag"
+          ]
+        }
+      ]
+    }
+  ],
+  "soudures": [
+    [
+      "V.diag",
+      "L.dessus"
+    ],
+    [
+      "V.jambe",
+      "L.dos"
+    ]
+  ],
+  "fixation": {
+    "face": "L.dos",
+    "colonnes_vis": "ecart_vis"
+  },
+  "appui": {
+    "face": "L.dessus"
+  },
+  "justifications": {
+    "L": "Le dos vissé transmet l'effort à la grille ; le dessus reçoit l'adaptateur et travaille en traction comme le tirant d'une console.",
+    "V.diag": "La diagonale travaille en compression et soutient le dessus près de l'appui, là où la tôle seule plie localement (constat de la phase 3).",
+    "V.jambe": "La jambe se plaque contre le dos sous les vis : elle double le dos là où la diagonale pousse et sert de surface de soudure.",
+    "retours": "Les retours optionnels raidissent le dessus, le dos (zone tirée entre le pli et les vis du haut) et la diagonale (flambement) ; l'optimiseur décide s'ils valent leur masse. Quand le dos et le dessus ont tous deux des retours, ils se rejoignent bord à bord au coin (soudure d'angle)."
+  }
+}

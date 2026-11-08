@@ -35,6 +35,7 @@ class ModeleCoque:
     encastres: set[int] = field(default_factory=set)  # noeuds bloqués en 6 ddl
     forces: dict[int, tuple[float, float, float]] = field(default_factory=dict)  # noeud -> (Fx, Fy, Fz)
     appuis_x: set[int] = field(default_factory=set)  # noeuds bloqués en X seulement (contact actif)
+    epaisseurs: dict[int, float] | None = None  # épaisseur par élément (sinon `epaisseur` partout)
 
 
 def trouver_ccx() -> str:
@@ -62,8 +63,14 @@ def ecrire_inp(modele: ModeleCoque, chemin: Path, analyse: str = "statique", n_m
         f"{m.materiau.E}, {m.materiau.nu}",
         "*DENSITY",
         f"{m.materiau.rho}",
-        f"*SHELL SECTION, ELSET=EALL, MATERIAL={m.materiau.nom}",
-        f"{m.epaisseur}",
+    ]
+    groupes: dict[float, list[int]] = {}
+    for e in sorted(m.elements):
+        groupes.setdefault(round((m.epaisseurs or {}).get(e, m.epaisseur), 4), []).append(e)
+    for k, (t, ids) in enumerate(sorted(groupes.items())):
+        lignes += [f"*ELSET, ELSET=EP{k}"] + _par_lignes(ids)
+        lignes += [f"*SHELL SECTION, ELSET=EP{k}, MATERIAL={m.materiau.nom}", f"{t}"]
+    lignes += [
         "*BOUNDARY",
         "ENCASTRE, 1, 6",
     ]
