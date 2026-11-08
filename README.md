@@ -135,10 +135,35 @@ résumé, appels, bilan) dans `resultats/concepteur/<date>/journal.md`.
 
 Réglages : modèle `claude-opus-5-5`, réflexion adaptative, effort `high` (`--effort` pour changer),
 relais automatique vers un modèle de secours si une requête est déclinée (`fallbacks: "default"`),
-cache du prompt. Les outils de contrôle (`gabarit/ia/outils.py`) ne dépendent pas du fournisseur
-d'IA : un modèle open source pourra s'y brancher.
+cache du prompt.
 
-Test hors ligne (sans clé ni réseau, faux serveur local) : `python tests/tester_concepteur.py`.
+### Avec un modèle open source (`gabarit/ia/ouvert.py`)
+
+Les outils de contrôle ne dépendent pas du fournisseur d'IA. Le moteur « ouvert » parle à toute API
+compatible OpenAI, en local et gratuit (Ollama, LM Studio) ou chez un hébergeur de modèles ouverts
+(OpenRouter, Mistral, Together) :
+
+    python exemples/concevoir.py 2 --moteur ouvert --url http://localhost:11434/v1 --modele qwen3:8b
+
+Ou dans l'écran Concepts du logiciel : bouton « Modèle ouvert », adresse, modèle et clé éventuelle
+(variable `GABARIT_IA_CLE`). Si le modèle sait appeler des outils, il utilise `verifier_concept` et
+`enregistrer_concept` comme Claude ; sinon (ou avec `--sans-outils`) il écrit le concept dans un bloc
+```` ```json ````, Gabarit le contrôle, l'enregistre s'il est valide et lui renvoie le rapport.
+
+| Serveur | Adresse |
+| --- | --- |
+| Ollama | `http://localhost:11434/v1` |
+| LM Studio | `http://localhost:1234/v1` |
+| OpenRouter | `https://openrouter.ai/api/v1` |
+| Mistral | `https://api.mistral.ai/v1` |
+
+Le prompt fait environ 8 000 jetons : avec Ollama, agrandir la fenêtre de contexte
+(`OLLAMA_CONTEXT_LENGTH=32768` avant de lancer Ollama). Un modèle de 7 à 8 milliards de paramètres
+(ce que tient une carte graphique de 8 Go) produit des concepts plus simples et se trompe plus
+souvent sur le format ; les contrôles l'empêchent d'enregistrer un concept invalide.
+
+Tests hors ligne (sans clé ni réseau, faux serveur local) : `python tests/tester_concepteur.py` et
+`python tests/tester_concepteur_ouvert.py`.
 
 ## Le logiciel (`gabarit/app/`)
 
@@ -149,7 +174,7 @@ ou `python -m gabarit.app` ; `--fenetre` pour une fenêtre native si `pywebview`
 | Écran | Ce qu'on y fait |
 | --- | --- |
 | 1. Cahier des charges | Matériau, effort, critère de flambement, épaisseurs et vés de l'atelier, encombrement, grille de fixation, hypothèses ; enregistrement dans `cahiers/` |
-| 2. Concepts | Liste des concepts (écrits à la main ou par l'IA), maquette 3D au point central ou sur un tirage aléatoire, variables, justifications, bouton « Vérifier » (géométrie + calcul rapide), lancement de l'IA Concepteur avec une consigne libre |
+| 2. Concepts | Liste des concepts (écrits à la main ou par l'IA), maquette 3D au point central ou sur un tirage aléatoire, variables, justifications, bouton « Vérifier » (géométrie + calcul rapide), lancement de l'IA Concepteur (Claude ou modèle ouvert) avec une consigne libre |
 | 3. Optimisation | Choix du concept et du budget, suivi en direct (nuage des essais, meilleur résultat), arrêt ; une étude existante est reprise |
 | 4. Résultats | Comparaison des concepts, optimum en 3D, vérification à 6 et 4 mm, valeurs des variables, Von Mises, bouton « Télécharger le STEP » |
 

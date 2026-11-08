@@ -75,11 +75,21 @@ def exporter_step_fichier(chemin_concept: str, chemin_cdc: str, valeurs: dict, s
     return str(exporter_step(c, sortie))
 
 
-def charger_config() -> None:
+def lire_config() -> dict:
     try:
-        cle = json.loads(CONFIG.read_text(encoding="utf-8")).get("anthropic_api_key")
+        return json.loads(CONFIG.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        return
+        return {}
+
+
+def ecrire_config(**maj) -> None:
+    c = {**lire_config(), **maj}
+    CONFIG.parent.mkdir(parents=True, exist_ok=True)
+    CONFIG.write_text(json.dumps(c, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def charger_config() -> None:
+    cle = lire_config().get("anthropic_api_key")
     if cle and not os.environ.get("ANTHROPIC_API_KEY"):
         os.environ["ANTHROPIC_API_KEY"] = cle
 
@@ -121,8 +131,7 @@ def page() -> None:
         def enregistrer_cle():
             os.environ["ANTHROPIC_API_KEY"] = champ.value.strip()
             if memoriser.value:
-                CONFIG.parent.mkdir(parents=True, exist_ok=True)
-                CONFIG.write_text(json.dumps({"anthropic_api_key": champ.value.strip()}), encoding="utf-8")
+                ecrire_config(anthropic_api_key=champ.value.strip())
             dialogue_cle.close()
             ui.notify("Clé enregistrée", type="positive")
         with ui.row().classes("w-full justify-end"):
@@ -365,13 +374,28 @@ def afficher_rapport(r: dict) -> None:
 
 def carte_ia() -> None:
     tache = TACHES["concepteur"]
+    cfg = lire_config()
     with ui.card().classes("w-full"):
         ui.label("IA Concepteur").classes("text-lg font-semibold")
-        ui.label("Claude propose des formes générales, les vérifie et les corrige lui-même.").classes(
+        ui.label("L'IA propose des formes générales, les vérifie et les corrige elle-même.").classes(
             "text-sm text-gray-600")
+        moteur = ui.toggle({"claude": "Claude", "ouvert": "Modèle ouvert"}, value=cfg.get("ia_moteur", "claude"))
+        with ui.column().classes("w-full gap-0") as zone_ouvert:
+            url = ui.input("Adresse du serveur", value=cfg.get("ia_url", "http://localhost:11434/v1")).classes("w-full")
+            with ui.row().classes("w-full no-wrap"):
+                modele = ui.input("Modèle", value=cfg.get("ia_modele", "qwen3:8b")).classes("w-1/2")
+                cle = ui.input("Clé (service hébergé)", password=True,
+                               value=os.environ.get("GABARIT_IA_CLE", "")).classes("w-1/2")
+            sans_outils = ui.checkbox("Sans appel d'outils (concept rendu dans le texte)",
+                                      value=cfg.get("ia_sans_outils", False))
+            ui.label("Ollama : http://localhost:11434/v1 · LM Studio : http://localhost:1234/v1 · "
+                     "OpenRouter : https://openrouter.ai/api/v1 · Mistral : https://api.mistral.ai/v1").classes(
+                "text-xs text-gray-500")
+        zone_ouvert.bind_visibility_from(moteur, "value", backward=lambda v: v == "ouvert")
         with ui.row().classes("w-full"):
             n = ui.number("Concepts", value=3, min=1, max=6, step=1).classes("w-24")
             effort = ui.select(["medium", "high", "xhigh"], value="high", label="Effort").classes("w-32")
+            effort.bind_visibility_from(moteur, "value", backward=lambda v: v == "claude")
         consigne = ui.textarea("Ton idée ou une consigne (facultatif)").classes("w-full").props("autogrow")
         with ui.row():
             bouton = ui.button("Proposer des concepts", icon="auto_awesome")
@@ -381,20 +405,31 @@ def carte_ia() -> None:
             journal.push(l)
 
         def lancer():
-            if not os.environ.get("ANTHROPIC_API_KEY"):
-                ui.notify("Renseigne d'abord la clé API (icône clé en haut à droite)", type="warning")
-                return
-            args = ["exemples/concevoir.py", str(int(n.value)), "--effort", effort.value, "--cdc", str(ETAT["cdc"])]
+            args = ["exemples/concevoir.py", str(int(n.value)), "--cdc", str(ETAT["cdc"])]
+            env = {}
+            if moteur.value == "claude":
+                if not os.environ.get("ANTHROPIC_API_KEY"):
+                    ui.notify("Renseigne d'abord la clé API (icône clé en haut à droite)", type="warning")
+                    return
+                args += ["--effort", effort.value]
+            else:
+                args += ["--moteur", "ouvert", "--url", url.value.strip(), "--modele", modele.value.strip()]
+                if sans_outils.value:
+                    args.append("--sans-outils")
+                if cle.value.strip():
+                    os.environ["GABARIT_IA_CLE"] = env["GABARIT_IA_CLE"] = cle.value.strip()
+            ecrire_config(ia_moteur=moteur.value, ia_url=url.value.strip(), ia_modele=modele.value.strip(),
+                          ia_sans_outils=sans_outils.value)
             if consigne.value.strip():
                 args += ["--consigne", consigne.value.strip()]
             journal.clear()
-            tache.lancer(args, titre="IA Concepteur")
+            tache.lancer(args, titre="IA Concepteur", env=env)
 
         def suivre():
             for l in tache.nouvelles_lignes():
                 journal.push(l)
                 if l.startswith("[fin"):
-                    ui.notify("IA Concepteur terminée : recharge la liste des concepts", type="info")
+                    ui.notify("IA Concepteur terminée : appuie sur F5 pour voir les nouveaux concepts", type="info")
             bouton.set_enabled(not tache.en_cours)
             arret.set_visibility(tache.en_cours)
         bouton.on_click(lancer)
