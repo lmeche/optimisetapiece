@@ -146,6 +146,7 @@ class Session:
     bilan: str = ""
     jetons: dict = field(default_factory=lambda: {"entree": 0, "sortie": 0, "cache_lu": 0, "cache_ecrit": 0})
     arret: str = ""
+    mode_texte: bool = False  # moteur ouvert : le serveur a refusé les outils, concepts rendus dans le texte
 
     def journal(self, texte: str) -> None:
         self.dossier.mkdir(parents=True, exist_ok=True)

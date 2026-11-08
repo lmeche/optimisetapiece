@@ -5,6 +5,7 @@ Lancer depuis la racine du dépôt :  python -m gabarit.app   (ajouter --fenetre
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import os
 import re
@@ -249,7 +250,7 @@ def onglet_concepts() -> None:
                         d = json.loads(p.read_text(encoding="utf-8"))
                     except ValueError:
                         continue
-                    lignes.append({"id": str(p), "nom": d.get("nom", p.stem), "origine": "IA" if "ia" in p.parts else "manuel",
+                    lignes.append({"id": str(p), "nom": d.get("nom", p.stem), "origine": origine(p),
                                    "variables": len(d.get("variables", {})), "toles": len(d.get("toles", []))})
                 table = ui.table(rows=lignes, columns=[
                     {"name": "nom", "label": "Concept", "field": "nom", "align": "left"},
@@ -372,6 +373,24 @@ def afficher_rapport(r: dict) -> None:
         ui.label(f"Calcul rapide impossible : {calc.get('erreur')}").classes("text-negative")
 
 
+def origine(p: Path) -> str:
+    return "exploration" if "exploration" in p.parts else "IA" if "ia" in p.parts else "manuel"
+
+
+def dernier_catalogue() -> list[dict]:
+    """Lignes du catalogue de la dernière exploration longue, de la plus récente à la plus ancienne."""
+    cats = sorted((RACINE / "resultats" / "exploration").glob("*/catalogue.csv"))
+    if not cats:
+        return []
+    with cats[-1].open(encoding="utf-8-sig") as f:
+        lignes = list(reversed(list(csv.DictReader(f))))
+    for r in lignes:  # le nom court de la piste (avant les deux-points), ou le concept d'une piste inventée
+        inventee = r.get("piste", "").startswith("Invente")
+        r["piste_courte"] = ("inventée" + (f" : {r['concept_nom']}" if r.get("concept_nom") else "") if inventee
+                             else r.get("piste", "").split(" :")[0])
+    return lignes
+
+
 def carte_ia() -> None:
     tache = TACHES["concepteur"]
     cfg = lire_config()
@@ -388,11 +407,20 @@ def carte_ia() -> None:
                                value=os.environ.get("GABARIT_IA_CLE", "")).classes("w-1/2")
             sans_outils = ui.checkbox("Sans appel d'outils (concept rendu dans le texte)",
                                       value=cfg.get("ia_sans_outils", False))
+            with ui.row().classes("w-full items-center"):
+                explo = ui.checkbox("Exploration longue : une piste différente par essai, pendant",
+                                    value=cfg.get("ia_exploration", False))
+                heures = ui.number("Heures", value=cfg.get("ia_heures", 8), min=0.1, max=72, step=0.5,
+                                   format="%.1f").classes("w-24")
+                heures.bind_visibility_from(explo, "value")
             ui.label("Ollama : http://localhost:11434/v1 · LM Studio : http://localhost:1234/v1 · "
                      "OpenRouter : https://openrouter.ai/api/v1 · Mistral : https://api.mistral.ai/v1").classes(
                 "text-xs text-gray-500")
         zone_ouvert.bind_visibility_from(moteur, "value", backward=lambda v: v == "ouvert")
-        with ui.row().classes("w-full"):
+        def exploration() -> bool:
+            return moteur.value == "ouvert" and explo.value
+
+        with ui.row().classes("w-full") as zone_n:
             n = ui.number("Concepts", value=3, min=1, max=6, step=1).classes("w-24")
             effort = ui.select(["medium", "high", "xhigh"], value="high", label="Effort").classes("w-32")
             effort.bind_visibility_from(moteur, "value", backward=lambda v: v == "claude")
@@ -400,12 +428,30 @@ def carte_ia() -> None:
         with ui.row():
             bouton = ui.button("Proposer des concepts", icon="auto_awesome")
             arret = ui.button("Arrêter", icon="stop", on_click=tache.arreter).props("flat color=negative")
+
+        def maj_mode(_=None):
+            zone_n.set_visibility(not exploration())
+            consigne.set_visibility(not exploration())
+            bouton.set_text("Lancer l'exploration" if exploration() else "Proposer des concepts")
+        moteur.on_value_change(maj_mode)
+        explo.on_value_change(maj_mode)
+        maj_mode()
         journal = ui.log(max_lines=400).classes("w-full h-48 text-xs")
         for l in tache.lignes[-200:]:
             journal.push(l)
+        with ui.expansion("Catalogue de la dernière exploration", icon="travel_explore").classes("w-full"):
+            catalogue = ui.table(rows=dernier_catalogue(), row_key="essai", columns=[
+                {"name": c, "label": lab, "field": c, "align": "left" if c == "piste_courte" else "right"}
+                for c, lab in (("essai", "N°"), ("piste_courte", "Piste"), ("statut", "Résultat"), ("masse_kg", "kg"),
+                               ("effort_tenu_kN", "kN tenus"), ("kg_par_kN", "kg/kN"), ("duree_min", "min"))],
+            ).classes("w-full").props("flat dense wrap-cells")
+            ui.label("Masse et effort au point central des variables, calcul grossier : un ordre de grandeur pour "
+                     "trier les pistes, pas le résultat de l'optimisation.").classes("text-xs text-gray-500")
 
         def lancer():
             args = ["exemples/concevoir.py", str(int(n.value)), "--cdc", str(ETAT["cdc"])]
+            if exploration():
+                args = ["exemples/explorer.py", "--heures", f"{float(heures.value or 8):g}", "--cdc", str(ETAT["cdc"])]
             env = {}
             if moteur.value == "claude":
                 if not os.environ.get("ANTHROPIC_API_KEY"):
@@ -413,23 +459,27 @@ def carte_ia() -> None:
                     return
                 args += ["--effort", effort.value]
             else:
-                args += ["--moteur", "ouvert", "--url", url.value.strip(), "--modele", modele.value.strip()]
+                args += [] if exploration() else ["--moteur", "ouvert"]
+                args += ["--url", url.value.strip(), "--modele", modele.value.strip()]
                 if sans_outils.value:
                     args.append("--sans-outils")
                 if cle.value.strip():
                     os.environ["GABARIT_IA_CLE"] = env["GABARIT_IA_CLE"] = cle.value.strip()
             ecrire_config(ia_moteur=moteur.value, ia_url=url.value.strip(), ia_modele=modele.value.strip(),
-                          ia_sans_outils=sans_outils.value)
-            if consigne.value.strip():
+                          ia_sans_outils=sans_outils.value, ia_exploration=explo.value, ia_heures=heures.value)
+            if consigne.value.strip() and not exploration():
                 args += ["--consigne", consigne.value.strip()]
             journal.clear()
-            tache.lancer(args, titre="IA Concepteur", env=env)
+            tache.lancer(args, titre="Exploration" if exploration() else "IA Concepteur", env=env)
 
         def suivre():
             for l in tache.nouvelles_lignes():
                 journal.push(l)
+                if l.startswith(("[catalogue]", "[fin")):
+                    catalogue.rows = dernier_catalogue()
+                    catalogue.update()
                 if l.startswith("[fin"):
-                    ui.notify("IA Concepteur terminée : appuie sur F5 pour voir les nouveaux concepts", type="info")
+                    ui.notify("IA terminée : appuie sur F5 pour voir les nouveaux concepts", type="info")
             bouton.set_enabled(not tache.en_cours)
             arret.set_visibility(tache.en_cours)
         bouton.on_click(lancer)

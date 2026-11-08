@@ -42,7 +42,8 @@ def concevoir_ouvert(n_concepts: int = 3, url: str = URL_OLLAMA, modele: str = "
                      chemin_cdc: str | Path = RACINE / "cahiers" / "sae51_equerre.json",
                      exemples: list[Path] | None = None, sortie: Path = RACINE / "concepts" / "ia",
                      dossier_journal: Path | None = None, consigne: str = "", calcul: bool = True,
-                     outils: bool = True, delai: float = 600.0, afficher=print) -> Session:
+                     outils: bool = True, delai: float = 600.0, tours_max: int = TOURS_MAX,
+                     afficher=print) -> Session:
     cdc = CahierDesCharges.charger(chemin_cdc)
     exemples = exemples if exemples is not None else [RACINE / "concepts" / "sae51_L_V.json"]
     session = Session(dossier_journal or RACINE / "resultats" / "concepteur" / time.strftime("%Y%m%d_%H%M%S"))
@@ -55,7 +56,7 @@ def concevoir_ouvert(n_concepts: int = 3, url: str = URL_OLLAMA, modele: str = "
     entetes = {"Content-Type": "application/json", **({"Authorization": f"Bearer {cle}"} if cle else {})}
 
     illisibles = 0
-    for _ in range(TOURS_MAX):
+    for _ in range(tours_max):
         corps = {"model": modele, "messages": messages}
         if outils:
             corps["tools"] = _outils_openai()
@@ -64,6 +65,7 @@ def concevoir_ouvert(n_concepts: int = 3, url: str = URL_OLLAMA, modele: str = "
         except ErreurServeur as e:
             if outils and "tool" in e.texte.lower():
                 outils = False  # le modèle ne gère pas les outils : on passe au mode texte
+                session.mode_texte = True
                 session.journal("Le serveur refuse les outils pour ce modèle : passage au mode texte.")
                 continue
             raise
@@ -118,7 +120,7 @@ def concevoir_ouvert(n_concepts: int = 3, url: str = URL_OLLAMA, modele: str = "
             suite = "Tous les concepts sont enregistrés : écris le bilan, sans bloc json."
         messages.append({"role": "user", "content": f"{suite}\n```json\n{resultat}\n```"})
     else:
-        session.arret = f"limite de {TOURS_MAX} tours atteinte"
+        session.arret = f"limite de {tours_max} tours atteinte"
     session.journal(f"## Bilan\n\n{session.bilan or '(aucun)'}\n\nArrêt : {session.arret}. "
                     f"Concepts : {', '.join(_relatif(p) for p in session.concepts) or 'aucun'}. "
                     f"Jetons : {session.jetons}.")

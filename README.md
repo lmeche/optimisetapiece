@@ -163,8 +163,25 @@ Le prompt fait environ 8 000 jetons : avec Ollama, agrandir la fenêtre de conte
 (ce que tient une carte graphique de 8 Go) produit des concepts plus simples et se trompe plus
 souvent sur le format ; les contrôles l'empêchent d'enregistrer un concept invalide.
 
-Tests hors ligne (sans clé ni réseau, faux serveur local) : `python tests/tester_concepteur.py` et
-`python tests/tester_concepteur_ouvert.py`.
+### Exploration longue (`gabarit/ia/exploration.py`)
+
+Pour explorer beaucoup de formes sans payer de jetons : un petit modèle local tourne pendant des heures
+(une nuit) et enchaîne des essais courts. Chaque essai repart d'une conversation neuve (le contexte d'un petit
+modèle reste court), vise un seul concept sur une piste donnée (joues dégressives, âme centrale, caisson
+fermé, cadre fermé, tirant suspendu... douze principes, puis des pistes inventées par le modèle ou des
+reprises de pistes ratées), et reçoit la liste de ce qui a déjà été essayé pour ne pas le refaire.
+
+    python exemples/explorer.py --heures 8 --url http://localhost:1234/v1 --modele qwen3-8b
+
+Ou dans l'écran Concepts : « Modèle ouvert », case « Exploration longue » et durée. Les concepts valides
+arrivent dans `concepts/exploration/` ; le catalogue de tous les essais (piste, résultat, masse, effort tenu
+et kg/kN au calcul rapide, durée) dans `resultats/exploration/<date>/catalogue.csv`, aussi affiché sous
+l'IA Concepteur. Le calcul rapide se fait au point central des variables : il sert à trier les pistes, les
+meilleures passent ensuite par l'optimiseur. Régler la fenêtre de contexte du modèle à 16 000 jetons au moins
+(LM Studio : au chargement du modèle ; Ollama : `OLLAMA_CONTEXT_LENGTH`).
+
+Tests hors ligne (sans clé ni réseau, faux serveur local) : `python tests/tester_concepteur.py`,
+`python tests/tester_concepteur_ouvert.py` et `python tests/tester_exploration.py`.
 
 ## Le logiciel (`gabarit/app/`)
 
