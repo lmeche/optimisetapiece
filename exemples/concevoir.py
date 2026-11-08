@@ -30,12 +30,14 @@ def main() -> int:
     p.add_argument("--modele", default=MODELE)
     p.add_argument("--consigne", default="", help="indication libre transmise à l'IA (idée de forme, contrainte...)")
     p.add_argument("--sans-calcul", action="store_true", help="contrôle géométrique seul, sans calcul rapide")
+    p.add_argument("--cdc", default=str(RACINE / "cahiers" / "sae51_equerre.json"), help="cahier des charges (JSON)")
     a = p.parse_args()
     if not os.environ.get("ANTHROPIC_API_KEY"):
         print("Variable ANTHROPIC_API_KEY absente : crée une clé sur https://platform.claude.com puis définis-la.")
         return 1
     try:
-        s = concevoir(a.n, modele=a.modele, effort=a.effort, consigne=a.consigne, calcul=not a.sans_calcul)
+        s = concevoir(a.n, chemin_cdc=a.cdc, modele=a.modele, effort=a.effort, consigne=a.consigne,
+                      calcul=not a.sans_calcul)
     except anthropic.AuthenticationError:
         print("Clé API refusée : vérifie ANTHROPIC_API_KEY.")
         return 1

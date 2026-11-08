@@ -2,6 +2,7 @@
 
 Lancer depuis la racine du dépôt :
     python exemples/optimiser_concept.py concepts/sae51_L_V.json [n_paralleles] [--rapport]
+        [--budget initial,bayes,affinage]   (défaut 32,96,40)
 Résultats dans resultats/<nom du fichier>/ : base Optuna, journal CSV, nuage des essais, croquis, synthèse.
 """
 from __future__ import annotations
@@ -32,17 +33,20 @@ from gabarit.rapport.image import image_von_mises  # noqa: E402
 CDC = RACINE / "cahiers" / "sae51_equerre.json"
 
 
-def main(chemin: Path, n_paralleles: int, rapport_seul: bool) -> None:
-    etude = EtudeConcept(chemin, CDC)
+def main(chemin: Path, n_paralleles: int, rapport_seul: bool, budget: tuple[int, int, int] = (32, 96, 40),
+         cdc: Path = CDC) -> None:
+    etude = EtudeConcept(chemin, cdc)
     sortie = RACINE / "resultats" / chemin.stem
     sortie.mkdir(parents=True, exist_ok=True)
     stockage = f"sqlite:///{sortie / 'etude.db'}"
     t0 = time.time()
     if not rapport_seul:
-        with (sortie / "essais.csv").open("w", newline="", encoding="utf-8") as f:
+        reprise = (sortie / "essais.csv").exists()  # une étude existante est poursuivie : on complète le journal
+        with (sortie / "essais.csv").open("a" if reprise else "w", newline="", encoding="utf-8") as f:
             w = csv.writer(f)
-            w.writerow(["numero", "faisable", "objectif_kg_par_kN", "masse_kg", "effort_tenu_N", "flambement",
-                        "traction_vis", "valeurs"])
+            if not reprise:
+                w.writerow(["numero", "faisable", "objectif_kg_par_kN", "masse_kg", "effort_tenu_N", "flambement",
+                            "traction_vis", "valeurs"])
             ref = {}
 
             def journal(tr):
@@ -55,8 +59,9 @@ def main(chemin: Path, n_paralleles: int, rapport_seul: bool) -> None:
                       f"obj={tr.value:.4f} meilleur={best.value if best else float('nan'):.4f}", flush=True)
 
             ref["s"] = optuna.create_study(study_name=chemin.stem, storage=stockage, load_if_exists=True)
-            optimiser(etude.proposer, etude.evaluer, n_initial=32, n_bayes=96, affinage=etude.affinage(),
-                      n_affinage=40, n_paralleles=n_paralleles, stockage=stockage, nom=chemin.stem, journal=journal)
+            optimiser(etude.proposer, etude.evaluer, n_initial=budget[0], n_bayes=budget[1],
+                      affinage=etude.affinage(), n_affinage=budget[2], n_paralleles=n_paralleles,
+                      stockage=stockage, nom=chemin.stem, journal=journal)
         print(f"Optimisation terminée en {time.time() - t0:.0f} s")
     study = optuna.load_study(study_name=chemin.stem, storage=stockage)
     rapport(study, etude, sortie, chemin)
@@ -64,7 +69,8 @@ def main(chemin: Path, n_paralleles: int, rapport_seul: bool) -> None:
 
 def rapport(study, etude: EtudeConcept, sortie: Path, chemin: Path) -> None:
     best = meilleur_faisable(study)
-    synthese = {"concept": etude.definition["nom"], "essais": len(study.trials),
+    fichier = chemin.relative_to(RACINE) if chemin.is_relative_to(RACINE) else chemin
+    synthese = {"concept": etude.definition["nom"], "fichier_concept": str(fichier), "essais": len(study.trials),
                 "faisables": sum(faisable(t) for t in study.trials)}
     if best is None:
         ok = [t for t in study.trials if t.user_attrs.get("effort_tenu_N")]
@@ -117,5 +123,14 @@ def trace_nuage(study, best, chemin: Path, titre: str, faisable_trouve: bool = T
 
 
 if __name__ == "__main__":
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    main(Path(args[0]).resolve(), int(args[1]) if len(args) > 1 else 4, "--rapport" in sys.argv)
+    import argparse
+
+    p = argparse.ArgumentParser(description="Optimisation d'un concept au format déclaratif")
+    p.add_argument("concept")
+    p.add_argument("n_paralleles", nargs="?", type=int, default=4)
+    p.add_argument("--rapport", action="store_true", help="refaire seulement le rapport d'une étude existante")
+    p.add_argument("--budget", default="32,96,40", help="essais initiaux, bayésiens, d'affinage")
+    p.add_argument("--cdc", default=str(CDC), help="cahier des charges (JSON)")
+    a = p.parse_args()
+    main(Path(a.concept).resolve(), a.n_paralleles, a.rapport, tuple(int(x) for x in a.budget.split(",")),
+         Path(a.cdc).resolve())
