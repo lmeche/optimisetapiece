@@ -169,7 +169,9 @@ Tests hors ligne (sans clé ni réseau, faux serveur local) : `python tests/test
 
 Application locale : elle tourne sur le PC (calculs compris) et s'affiche dans le navigateur.
 Après `installer_windows.ps1`, double-cliquer sur le raccourci Gabarit du bureau (ou `Gabarit.bat`,
-ou `python -m gabarit.app` ; `--fenetre` pour une fenêtre native si `pywebview` est installé).
+ou `python -m gabarit.app` ; `--fenetre` pour une fenêtre native si `pywebview` est installé). Le logiciel
+n'est visible que depuis ce PC ; `--reseau` l'ouvre aux autres appareils du réseau local (sans mot de passe :
+à éviter sur un réseau partagé, la clé API serait utilisable par les autres).
 
 | Écran | Ce qu'on y fait |
 | --- | --- |

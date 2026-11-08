@@ -638,8 +638,10 @@ def lancer() -> None:
     p.add_argument("--fenetre", action="store_true", help="fenêtre native (nécessite pywebview)")
     p.add_argument("--port", type=int, default=8080)
     p.add_argument("--sans-navigateur", action="store_true", help="ne pas ouvrir le navigateur")
+    p.add_argument("--reseau", action="store_true",
+                   help="ouvrir le logiciel aux autres appareils du réseau (sinon, ce PC seulement)")
     a = p.parse_args()
     charger_config()
     app.native.window_args["resizable"] = True
-    ui.run(title="Gabarit", port=a.port, native=a.fenetre, window_size=(1400, 900) if a.fenetre else None,
+    ui.run(title="Gabarit", host="0.0.0.0" if a.reseau else "127.0.0.1", port=a.port, native=a.fenetre, window_size=(1400, 900) if a.fenetre else None,
            show=not a.sans_navigateur, reload=False, language="fr", favicon="📐")
