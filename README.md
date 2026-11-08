@@ -13,7 +13,8 @@ Plan d'action : voir le document « Gabarit : plan d'action ».
 - [x] Phase 2 : équerre en U de référence calculée sur la vraie grille (`exemples/phase2_equerre_u.py`)
 - [x] Phase 3 : moteur d'optimisation validé (`tests/valider_optimiseur.py`) et appliqué à l'équerre en U (`exemples/phase3_optimisation.py`)
 - [x] Phase 4 : format de concept déclaratif, concept « L + V » optimisé, IA Concepteur (`exemples/concevoir.py`)
-- [ ] Phase 5 et suivantes : IA Analyste, compte rendu (croquis, 3D, STEP), recoupement CATIA
+- [x] Logiciel : prototype d'application locale (`Gabarit.bat` ou `python -m gabarit.app`)
+- [ ] Phase 5 et suivantes : IA Analyste, compte rendu, installeur .exe, recoupement CATIA
 
 ## Phase 2 : ce que fait une évaluation (`gabarit/evaluation.py`)
 
@@ -138,4 +139,24 @@ cache du prompt. Les outils de contrôle (`gabarit/ia/outils.py`) ne dépendent 
 d'IA : un modèle open source pourra s'y brancher.
 
 Test hors ligne (sans clé ni réseau, faux serveur local) : `python tests/tester_concepteur.py`.
+
+## Le logiciel (`gabarit/app/`)
+
+Application locale : elle tourne sur le PC (calculs compris) et s'affiche dans le navigateur.
+Après `installer_windows.ps1`, double-cliquer sur le raccourci Gabarit du bureau (ou `Gabarit.bat`,
+ou `python -m gabarit.app` ; `--fenetre` pour une fenêtre native si `pywebview` est installé).
+
+| Écran | Ce qu'on y fait |
+| --- | --- |
+| 1. Cahier des charges | Matériau, effort, critère de flambement, épaisseurs et vés de l'atelier, encombrement, grille de fixation, hypothèses ; enregistrement dans `cahiers/` |
+| 2. Concepts | Liste des concepts (écrits à la main ou par l'IA), maquette 3D au point central ou sur un tirage aléatoire, variables, justifications, bouton « Vérifier » (géométrie + calcul rapide), lancement de l'IA Concepteur avec une consigne libre |
+| 3. Optimisation | Choix du concept et du budget, suivi en direct (nuage des essais, meilleur résultat), arrêt ; une étude existante est reprise |
+| 4. Résultats | Comparaison des concepts, optimum en 3D, vérification à 6 et 4 mm, valeurs des variables, Von Mises, bouton « Télécharger le STEP » |
+
+La clé API (icône clé) reste sur le PC (`~/.gabarit/config.json` si on choisit de la mémoriser).
+Les calculs longs tournent dans des processus séparés : Gmsh et CalculiX ne supportent pas les fils
+d'exécution, et l'interface reste fluide.
+
+Export STEP (`gabarit/export/step.py`) : chaque face devient une plaque de son épaisseur, plis vifs
+sans rayon, une pièce par tôle ; les faces doublées sont décalées pour ne pas se chevaucher.
 

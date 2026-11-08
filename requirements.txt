@@ -5,3 +5,5 @@ matplotlib>=3.8
 optuna>=4
 scipy>=1.11
 anthropic>=2.6
+nicegui>=4
+plotly>=6
