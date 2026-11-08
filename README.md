@@ -135,21 +135,66 @@ résumé, appels, bilan) dans `resultats/concepteur/<date>/journal.md`.
 
 Réglages : modèle `claude-opus-5-5`, réflexion adaptative, effort `high` (`--effort` pour changer),
 relais automatique vers un modèle de secours si une requête est déclinée (`fallbacks: "default"`),
-cache du prompt. Les outils de contrôle (`gabarit/ia/outils.py`) ne dépendent pas du fournisseur
-d'IA : un modèle open source pourra s'y brancher.
+cache du prompt. Une réponse coupée par la limite de longueur (64 000 jetons) n'est pas exécutée : le même
+tour est relancé avec une limite doublée, jusqu'au maximum du modèle (128 000).
 
-Test hors ligne (sans clé ni réseau, faux serveur local) : `python tests/tester_concepteur.py`.
+### Avec un modèle open source (`gabarit/ia/ouvert.py`)
+
+Les outils de contrôle ne dépendent pas du fournisseur d'IA. Le moteur « ouvert » parle à toute API
+compatible OpenAI, en local et gratuit (Ollama, LM Studio) ou chez un hébergeur de modèles ouverts
+(OpenRouter, Mistral, Together) :
+
+    python exemples/concevoir.py 2 --moteur ouvert --url http://localhost:11434/v1 --modele qwen3:8b
+
+Ou dans l'écran Concepts du logiciel : bouton « Modèle ouvert », adresse, modèle et clé éventuelle
+(variable `GABARIT_IA_CLE`). Si le modèle sait appeler des outils, il utilise `verifier_concept` et
+`enregistrer_concept` comme Claude ; sinon (ou avec `--sans-outils`) il écrit le concept dans un bloc
+```` ```json ````, Gabarit le contrôle, l'enregistre s'il est valide et lui renvoie le rapport.
+
+| Serveur | Adresse |
+| --- | --- |
+| Ollama | `http://localhost:11434/v1` |
+| LM Studio | `http://localhost:1234/v1` |
+| OpenRouter | `https://openrouter.ai/api/v1` |
+| Mistral | `https://api.mistral.ai/v1` |
+
+Le prompt fait environ 8 000 jetons : avec Ollama, agrandir la fenêtre de contexte
+(`OLLAMA_CONTEXT_LENGTH=32768` avant de lancer Ollama). Un modèle de 7 à 8 milliards de paramètres
+(ce que tient une carte graphique de 8 Go) produit des concepts plus simples et se trompe plus
+souvent sur le format ; les contrôles l'empêchent d'enregistrer un concept invalide.
+
+### Exploration longue (`gabarit/ia/exploration.py`)
+
+Pour explorer beaucoup de formes sans payer de jetons : un petit modèle local tourne pendant des heures
+(une nuit) et enchaîne des essais courts. Chaque essai repart d'une conversation neuve (le contexte d'un petit
+modèle reste court), vise un seul concept sur une piste donnée (joues dégressives, âme centrale, caisson
+fermé, cadre fermé, tirant suspendu... douze principes, puis des pistes inventées par le modèle ou des
+reprises de pistes ratées), et reçoit la liste de ce qui a déjà été essayé pour ne pas le refaire.
+
+    python exemples/explorer.py --heures 8 --url http://localhost:1234/v1 --modele qwen3-8b
+
+Ou dans l'écran Concepts : « Modèle ouvert », case « Exploration longue » et durée. Les concepts valides
+arrivent dans `concepts/exploration/` ; le catalogue de tous les essais (piste, résultat, masse, effort tenu
+et kg/kN au calcul rapide, durée) dans `resultats/exploration/<date>/catalogue.csv`, aussi affiché sous
+l'IA Concepteur. Le calcul rapide se fait au point central des variables : il sert à trier les pistes, les
+meilleures passent ensuite par l'optimiseur. Régler la fenêtre de contexte du modèle à 16 000 jetons au moins
+(LM Studio : au chargement du modèle ; Ollama : `OLLAMA_CONTEXT_LENGTH`).
+
+Tests hors ligne (sans clé ni réseau, faux serveur local) : `python tests/tester_concepteur.py`,
+`python tests/tester_concepteur_ouvert.py` et `python tests/tester_exploration.py`.
 
 ## Le logiciel (`gabarit/app/`)
 
 Application locale : elle tourne sur le PC (calculs compris) et s'affiche dans le navigateur.
 Après `installer_windows.ps1`, double-cliquer sur le raccourci Gabarit du bureau (ou `Gabarit.bat`,
-ou `python -m gabarit.app` ; `--fenetre` pour une fenêtre native si `pywebview` est installé).
+ou `python -m gabarit.app` ; `--fenetre` pour une fenêtre native si `pywebview` est installé). Le logiciel
+n'est visible que depuis ce PC ; `--reseau` l'ouvre aux autres appareils du réseau local (sans mot de passe :
+à éviter sur un réseau partagé, la clé API serait utilisable par les autres).
 
 | Écran | Ce qu'on y fait |
 | --- | --- |
 | 1. Cahier des charges | Matériau, effort, critère de flambement, épaisseurs et vés de l'atelier, encombrement, grille de fixation, hypothèses ; enregistrement dans `cahiers/` |
-| 2. Concepts | Liste des concepts (écrits à la main ou par l'IA), maquette 3D au point central ou sur un tirage aléatoire, variables, justifications, bouton « Vérifier » (géométrie + calcul rapide), lancement de l'IA Concepteur avec une consigne libre |
+| 2. Concepts | Liste des concepts (écrits à la main ou par l'IA), maquette 3D au point central ou sur un tirage aléatoire, variables, justifications, bouton « Vérifier » (géométrie + calcul rapide), lancement de l'IA Concepteur (Claude ou modèle ouvert) avec une consigne libre |
 | 3. Optimisation | Choix du concept et du budget, suivi en direct (nuage des essais, meilleur résultat), arrêt ; une étude existante est reprise |
 | 4. Résultats | Comparaison des concepts, optimum en 3D, vérification à 6 et 4 mm, valeurs des variables, Von Mises, bouton « Télécharger le STEP » |
 

@@ -24,7 +24,8 @@ from gabarit.ia.outils import PART_TIRAGES_VALIDES_MIN, enregistrer, examiner_co
 
 MODELE = "claude-opus-5-5"
 EFFORT = "high"  # low | medium | high | xhigh | max ; la conception est un travail de raisonnement
-MAX_TOKENS = 32000
+MAX_TOKENS = 64000  # un tour peut contenir plusieurs concepts complets de quelques milliers de jetons chacun
+MAX_TOKENS_PLAFOND = 128000  # sortie maximale du modèle : une réponse coupée est relancée jusque-là
 TOURS_MAX = 40
 RACINE = Path(__file__).resolve().parents[2]
 
@@ -129,8 +130,9 @@ les vis et doubler le dos aident.
 
 ## Méthode
 Pour chaque concept : écris-le, appelle verifier_concept, corrige d'après le rapport jusqu'à ce qu'il soit \
-valide, puis appelle enregistrer_concept. Le calcul rapide n'est qu'un ordre de grandeur au point central : \
-l'optimiseur trouvera les bonnes dimensions, ton travail est de lui donner une forme et un espace de variables \
+valide, puis appelle enregistrer_concept. Travaille au plus deux concepts à la fois : un concept complet fait \
+plusieurs milliers de jetons, et une réponse trop longue est coupée. Le calcul rapide n'est qu'un ordre de \
+grandeur au point central : l'optimiseur trouvera les bonnes dimensions, ton travail est de lui donner une forme et un espace de variables \
 où une bonne solution existe. Quand tous les concepts demandés sont enregistrés, termine par un court bilan en \
 français : pour chaque concept, son principe et pourquoi il pourrait gagner."""
 
@@ -144,6 +146,7 @@ class Session:
     bilan: str = ""
     jetons: dict = field(default_factory=lambda: {"entree": 0, "sortie": 0, "cache_lu": 0, "cache_ecrit": 0})
     arret: str = ""
+    mode_texte: bool = False  # moteur ouvert : le serveur a refusé les outils, concepts rendus dans le texte
 
     def journal(self, texte: str) -> None:
         self.dossier.mkdir(parents=True, exist_ok=True)
@@ -167,11 +170,12 @@ def concevoir(n_concepts: int = 3, chemin_cdc: str | Path = RACINE / "cahiers" /
     messages = [{"role": "user", "content": demande}]
     session.journal(f"# IA Concepteur\n\nModèle {modele}, effort {effort}.\n\n**Demande** : {demande}")
     echecs_json = 0
+    limite = MAX_TOKENS
 
     for tour in range(TOURS_MAX):
         try:
             with client.beta.messages.stream(
-                model=modele, max_tokens=MAX_TOKENS, system=systeme, messages=messages, tools=OUTILS,
+                model=modele, max_tokens=limite, system=systeme, messages=messages, tools=OUTILS,
                 thinking={"type": "adaptive", "display": "summarized"}, output_config={"effort": effort},
                 betas=["server-side-fallback-2026-07-01"], fallbacks="default",
                 cache_control={"type": "ephemeral"},  # le préfixe de la conversation se relit depuis le cache
@@ -195,6 +199,15 @@ def concevoir(n_concepts: int = 3, chemin_cdc: str | Path = RACINE / "cahiers" /
             session.arret = f"refus du modèle : {getattr(details, 'explanation', '') or details}"
             session.journal(f"**Arrêt** : {session.arret}")
             break
+        if reponse.stop_reason == "max_tokens":  # réponse coupée : une entrée d'outil tronquée se lit comme un objet partiel
+            if limite >= MAX_TOKENS_PLAFOND:
+                session.arret = f"réponse tronquée à {limite} jetons (max_tokens), même avec la limite la plus haute"
+                session.journal(f"**Arrêt** : {session.arret}")
+                break
+            limite = min(2 * limite, MAX_TOKENS_PLAFOND)  # on rejoue le même tour, sans exécuter ses outils
+            afficher(f"\n[réponse coupée : le même tour est relancé avec une limite de {limite} jetons]\n")
+            session.journal(f"Réponse coupée (max_tokens) : le même tour est relancé avec une limite de {limite} jetons.")
+            continue
         if reponse.stop_reason == "pause_turn":
             messages.append({"role": "assistant", "content": contenu})
             continue
@@ -202,10 +215,6 @@ def concevoir(n_concepts: int = 3, chemin_cdc: str | Path = RACINE / "cahiers" /
         if not appels:
             session.bilan = "\n".join(b.text for b in contenu if b.type == "text").strip()
             session.arret = "terminé"
-            break
-        if reponse.stop_reason == "max_tokens":  # une entrée d'outil tronquée se lit comme un objet partiel
-            session.arret = "réponse tronquée (max_tokens) au milieu d'un appel d'outil"
-            session.journal(f"**Arrêt** : {session.arret}")
             break
 
         resultats = []

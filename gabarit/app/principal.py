@@ -5,6 +5,7 @@ Lancer depuis la racine du dépôt :  python -m gabarit.app   (ajouter --fenetre
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import os
 import re
@@ -75,11 +76,21 @@ def exporter_step_fichier(chemin_concept: str, chemin_cdc: str, valeurs: dict, s
     return str(exporter_step(c, sortie))
 
 
-def charger_config() -> None:
+def lire_config() -> dict:
     try:
-        cle = json.loads(CONFIG.read_text(encoding="utf-8")).get("anthropic_api_key")
+        return json.loads(CONFIG.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        return
+        return {}
+
+
+def ecrire_config(**maj) -> None:
+    c = {**lire_config(), **maj}
+    CONFIG.parent.mkdir(parents=True, exist_ok=True)
+    CONFIG.write_text(json.dumps(c, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def charger_config() -> None:
+    cle = lire_config().get("anthropic_api_key")
     if cle and not os.environ.get("ANTHROPIC_API_KEY"):
         os.environ["ANTHROPIC_API_KEY"] = cle
 
@@ -121,8 +132,7 @@ def page() -> None:
         def enregistrer_cle():
             os.environ["ANTHROPIC_API_KEY"] = champ.value.strip()
             if memoriser.value:
-                CONFIG.parent.mkdir(parents=True, exist_ok=True)
-                CONFIG.write_text(json.dumps({"anthropic_api_key": champ.value.strip()}), encoding="utf-8")
+                ecrire_config(anthropic_api_key=champ.value.strip())
             dialogue_cle.close()
             ui.notify("Clé enregistrée", type="positive")
         with ui.row().classes("w-full justify-end"):
@@ -240,7 +250,7 @@ def onglet_concepts() -> None:
                         d = json.loads(p.read_text(encoding="utf-8"))
                     except ValueError:
                         continue
-                    lignes.append({"id": str(p), "nom": d.get("nom", p.stem), "origine": "IA" if "ia" in p.parts else "manuel",
+                    lignes.append({"id": str(p), "nom": d.get("nom", p.stem), "origine": origine(p),
                                    "variables": len(d.get("variables", {})), "toles": len(d.get("toles", []))})
                 table = ui.table(rows=lignes, columns=[
                     {"name": "nom", "label": "Concept", "field": "nom", "align": "left"},
@@ -363,38 +373,113 @@ def afficher_rapport(r: dict) -> None:
         ui.label(f"Calcul rapide impossible : {calc.get('erreur')}").classes("text-negative")
 
 
+def origine(p: Path) -> str:
+    return "exploration" if "exploration" in p.parts else "IA" if "ia" in p.parts else "manuel"
+
+
+def dernier_catalogue() -> list[dict]:
+    """Lignes du catalogue de la dernière exploration longue, de la plus récente à la plus ancienne."""
+    cats = sorted((RACINE / "resultats" / "exploration").glob("*/catalogue.csv"))
+    if not cats:
+        return []
+    with cats[-1].open(encoding="utf-8-sig") as f:
+        lignes = list(reversed(list(csv.DictReader(f))))
+    for r in lignes:  # le nom court de la piste (avant les deux-points), ou le concept d'une piste inventée
+        inventee = r.get("piste", "").startswith("Invente")
+        r["piste_courte"] = ("inventée" + (f" : {r['concept_nom']}" if r.get("concept_nom") else "") if inventee
+                             else r.get("piste", "").split(" :")[0])
+    return lignes
+
+
 def carte_ia() -> None:
     tache = TACHES["concepteur"]
+    cfg = lire_config()
     with ui.card().classes("w-full"):
         ui.label("IA Concepteur").classes("text-lg font-semibold")
-        ui.label("Claude propose des formes générales, les vérifie et les corrige lui-même.").classes(
+        ui.label("L'IA propose des formes générales, les vérifie et les corrige elle-même.").classes(
             "text-sm text-gray-600")
-        with ui.row().classes("w-full"):
+        moteur = ui.toggle({"claude": "Claude", "ouvert": "Modèle ouvert"}, value=cfg.get("ia_moteur", "claude"))
+        with ui.column().classes("w-full gap-0") as zone_ouvert:
+            url = ui.input("Adresse du serveur", value=cfg.get("ia_url", "http://localhost:11434/v1")).classes("w-full")
+            with ui.row().classes("w-full no-wrap"):
+                modele = ui.input("Modèle", value=cfg.get("ia_modele", "qwen3:8b")).classes("w-1/2")
+                cle = ui.input("Clé (service hébergé)", password=True,
+                               value=os.environ.get("GABARIT_IA_CLE", "")).classes("w-1/2")
+            sans_outils = ui.checkbox("Sans appel d'outils (concept rendu dans le texte)",
+                                      value=cfg.get("ia_sans_outils", False))
+            with ui.row().classes("w-full items-center"):
+                explo = ui.checkbox("Exploration longue : une piste différente par essai, pendant",
+                                    value=cfg.get("ia_exploration", False))
+                heures = ui.number("Heures", value=cfg.get("ia_heures", 8), min=0.1, max=72, step=0.5,
+                                   format="%.1f").classes("w-24")
+                heures.bind_visibility_from(explo, "value")
+            ui.label("Ollama : http://localhost:11434/v1 · LM Studio : http://localhost:1234/v1 · "
+                     "OpenRouter : https://openrouter.ai/api/v1 · Mistral : https://api.mistral.ai/v1").classes(
+                "text-xs text-gray-500")
+        zone_ouvert.bind_visibility_from(moteur, "value", backward=lambda v: v == "ouvert")
+        def exploration() -> bool:
+            return moteur.value == "ouvert" and explo.value
+
+        with ui.row().classes("w-full") as zone_n:
             n = ui.number("Concepts", value=3, min=1, max=6, step=1).classes("w-24")
             effort = ui.select(["medium", "high", "xhigh"], value="high", label="Effort").classes("w-32")
+            effort.bind_visibility_from(moteur, "value", backward=lambda v: v == "claude")
         consigne = ui.textarea("Ton idée ou une consigne (facultatif)").classes("w-full").props("autogrow")
         with ui.row():
             bouton = ui.button("Proposer des concepts", icon="auto_awesome")
             arret = ui.button("Arrêter", icon="stop", on_click=tache.arreter).props("flat color=negative")
+
+        def maj_mode(_=None):
+            zone_n.set_visibility(not exploration())
+            consigne.set_visibility(not exploration())
+            bouton.set_text("Lancer l'exploration" if exploration() else "Proposer des concepts")
+        moteur.on_value_change(maj_mode)
+        explo.on_value_change(maj_mode)
+        maj_mode()
         journal = ui.log(max_lines=400).classes("w-full h-48 text-xs")
         for l in tache.lignes[-200:]:
             journal.push(l)
+        with ui.expansion("Catalogue de la dernière exploration", icon="travel_explore").classes("w-full"):
+            catalogue = ui.table(rows=dernier_catalogue(), row_key="essai", columns=[
+                {"name": c, "label": lab, "field": c, "align": "left" if c == "piste_courte" else "right"}
+                for c, lab in (("essai", "N°"), ("piste_courte", "Piste"), ("statut", "Résultat"), ("masse_kg", "kg"),
+                               ("effort_tenu_kN", "kN tenus"), ("kg_par_kN", "kg/kN"), ("duree_min", "min"))],
+            ).classes("w-full").props("flat dense wrap-cells")
+            ui.label("Masse et effort au point central des variables, calcul grossier : un ordre de grandeur pour "
+                     "trier les pistes, pas le résultat de l'optimisation.").classes("text-xs text-gray-500")
 
         def lancer():
-            if not os.environ.get("ANTHROPIC_API_KEY"):
-                ui.notify("Renseigne d'abord la clé API (icône clé en haut à droite)", type="warning")
-                return
-            args = ["exemples/concevoir.py", str(int(n.value)), "--effort", effort.value, "--cdc", str(ETAT["cdc"])]
-            if consigne.value.strip():
+            args = ["exemples/concevoir.py", str(int(n.value)), "--cdc", str(ETAT["cdc"])]
+            if exploration():
+                args = ["exemples/explorer.py", "--heures", f"{float(heures.value or 8):g}", "--cdc", str(ETAT["cdc"])]
+            env = {}
+            if moteur.value == "claude":
+                if not os.environ.get("ANTHROPIC_API_KEY"):
+                    ui.notify("Renseigne d'abord la clé API (icône clé en haut à droite)", type="warning")
+                    return
+                args += ["--effort", effort.value]
+            else:
+                args += [] if exploration() else ["--moteur", "ouvert"]
+                args += ["--url", url.value.strip(), "--modele", modele.value.strip()]
+                if sans_outils.value:
+                    args.append("--sans-outils")
+                if cle.value.strip():
+                    os.environ["GABARIT_IA_CLE"] = env["GABARIT_IA_CLE"] = cle.value.strip()
+            ecrire_config(ia_moteur=moteur.value, ia_url=url.value.strip(), ia_modele=modele.value.strip(),
+                          ia_sans_outils=sans_outils.value, ia_exploration=explo.value, ia_heures=heures.value)
+            if consigne.value.strip() and not exploration():
                 args += ["--consigne", consigne.value.strip()]
             journal.clear()
-            tache.lancer(args, titre="IA Concepteur")
+            tache.lancer(args, titre="Exploration" if exploration() else "IA Concepteur", env=env)
 
         def suivre():
             for l in tache.nouvelles_lignes():
                 journal.push(l)
+                if l.startswith(("[catalogue]", "[fin")):
+                    catalogue.rows = dernier_catalogue()
+                    catalogue.update()
                 if l.startswith("[fin"):
-                    ui.notify("IA Concepteur terminée : recharge la liste des concepts", type="info")
+                    ui.notify("IA terminée : appuie sur F5 pour voir les nouveaux concepts", type="info")
             bouton.set_enabled(not tache.en_cours)
             arret.set_visibility(tache.en_cours)
         bouton.on_click(lancer)
@@ -603,8 +688,10 @@ def lancer() -> None:
     p.add_argument("--fenetre", action="store_true", help="fenêtre native (nécessite pywebview)")
     p.add_argument("--port", type=int, default=8080)
     p.add_argument("--sans-navigateur", action="store_true", help="ne pas ouvrir le navigateur")
+    p.add_argument("--reseau", action="store_true",
+                   help="ouvrir le logiciel aux autres appareils du réseau (sinon, ce PC seulement)")
     a = p.parse_args()
     charger_config()
     app.native.window_args["resizable"] = True
-    ui.run(title="Gabarit", port=a.port, native=a.fenetre, window_size=(1400, 900) if a.fenetre else None,
+    ui.run(title="Gabarit", host="0.0.0.0" if a.reseau else "127.0.0.1", port=a.port, native=a.fenetre, window_size=(1400, 900) if a.fenetre else None,
            show=not a.sans_navigateur, reload=False, language="fr", favicon="📐")
