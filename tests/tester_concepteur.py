@@ -1,7 +1,7 @@
 """Phase 4 : test hors ligne de la boucle de l'IA Concepteur (sans clé API, sans réseau).
 
 Un faux serveur local joue le rôle de l'API : il répond en flux SSE par un scénario fixé (un concept
-cassé à vérifier, le concept corrigé à vérifier, un relais vers le modèle de secours puis l'enregistrement,
+cassé à vérifier, une réponse coupée par max_tokens, le concept corrigé à vérifier, un relais vers le modèle de secours puis l'enregistrement,
 un bilan). On vérifie que le vrai SDK anthropic envoie bien les paramètres prévus, que les résultats
 d'outils reviennent à l'IA, que le bloc de relais est filtré et que le concept est enregistré.
 Lancer :  python tests/tester_concepteur.py
@@ -54,6 +54,9 @@ def sse(blocs, stop):
 TOURS = [
     ([{"type": "thinking", "thinking": "Je pars du L + V."}, {"type": "text", "text": "Je vérifie un premier jet."},
       {"type": "tool_use", "id": "toolu_1", "name": "verifier_concept", "input": {"concept": casse}}], "tool_use"),
+    ([{"type": "text", "text": "Je rédige tout d'un coup."},  # réponse coupée : à relancer, pas à exécuter
+      {"type": "tool_use", "id": "toolu_x", "name": "enregistrer_concept", "input": {"concept": {"nom": "coupé"}}}],
+     "max_tokens"),
     ([{"type": "tool_use", "id": "toolu_2", "name": "verifier_concept", "input": {"concept": concept}}], "tool_use"),
     ([{"type": "text", "text": "partiel"}, {"type": "fallback", "from": {"model": "claude-opus-5-5"}, "to": {"model": "claude-opus-4-8"}},
       {"type": "tool_use", "id": "toolu_3", "name": "enregistrer_concept", "input": {"concept": concept}}], "tool_use"),
@@ -83,9 +86,12 @@ def main() -> int:
     _, premiere = requetes[0]
     entetes = {k.lower(): v for k, v in requetes[0][0].items()}
     retour_1 = requetes[1][1]["messages"][-1]["content"][0]
-    renvoi_3 = [b["type"] for b in requetes[3][1]["messages"][-2]["content"]]
+    renvoi_3 = [b["type"] for b in requetes[4][1]["messages"][-2]["content"]]
+    coupee, relance = requetes[1][1], requetes[2][1]
     controles = {
-        "4 requêtes": len(requetes) == 4,
+        "5 requêtes": len(requetes) == 5,
+        "réponse coupée relancée plus longue": relance["max_tokens"] > coupee["max_tokens"]
+                                              and relance["messages"] == coupee["messages"],
         "arrêt normal": s.arret == "terminé",
         "concept enregistré": enregistres == ["Test L + V"],
         "erreur de structure renvoyée à l'IA": "appui" in retour_1["content"],

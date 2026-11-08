@@ -135,7 +135,8 @@ résumé, appels, bilan) dans `resultats/concepteur/<date>/journal.md`.
 
 Réglages : modèle `claude-opus-5-5`, réflexion adaptative, effort `high` (`--effort` pour changer),
 relais automatique vers un modèle de secours si une requête est déclinée (`fallbacks: "default"`),
-cache du prompt.
+cache du prompt. Une réponse coupée par la limite de longueur (64 000 jetons) n'est pas exécutée : le même
+tour est relancé avec une limite doublée, jusqu'au maximum du modèle (128 000).
 
 ### Avec un modèle open source (`gabarit/ia/ouvert.py`)
 
