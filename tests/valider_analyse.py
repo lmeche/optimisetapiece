@@ -8,18 +8,23 @@
 2. Tirant (même plaque en traction) : flexion nulle, contrainte moyenne F / A, L_eq = L.
 3. Colonne comprimée (même plaque, effort de compression) : premier facteur de flambement proche d'Euler
    pi² E I / (4 L²) et déformée du mode 1 qui croît de l'encastrement vers le bout.
-4. Concept L + V (valeurs optimales figées dans tests/donnees) : identité kg/kN = 1000 rho/Re x L_eq / eta
+4. Garde-fou du solveur : bilan d'énergie et d'équilibre exact quand des efforts tombent sur des noeuds bloqués,
+   solution fausse détectée (celle du solveur multi-tâche : énergie +349 %, réactions décalées de 24 %),
+   mécanisme refusé après relances.
+5. Concept L + V (valeurs optimales figées dans tests/donnees) : identité kg/kN = 1000 rho/Re x L_eq / eta
    exacte, énergie = travail, parts de masse et de L_eq qui se somment, faces du mode de flambement.
 
 Lancer :  python tests/valider_analyse.py
 """
 from __future__ import annotations
 
+import copy
 import itertools
 import json
 import math
 import sys
 import tempfile
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -30,7 +35,13 @@ from gabarit.analyse.champ import champ_elements  # noqa: E402
 from gabarit.analyse.compte_rendu import analyser  # noqa: E402
 from gabarit.cahier_des_charges import CahierDesCharges  # noqa: E402
 from gabarit.concepts.format import ConceptJSON  # noqa: E402
-from gabarit.fem.calculix import Materiau, ModeleCoque, lancer  # noqa: E402
+from gabarit.fem.calculix import (  # noqa: E402
+    Materiau,
+    ModeleCoque,
+    bilan_correct,
+    bilan_statique,
+    lancer,
+)
 
 L, B, T, E = 100.0, 20.0, 2.0, 210000.0
 resultats: list[tuple[str, bool, str]] = []
@@ -122,7 +133,33 @@ def main() -> int:
     verifier("colonne : la déformée du mode 1 croît vers le bout", all(a < b for a, b in itertools.pairwise(flec)) and
              len(rb.modes) == len(rb.facteurs_flambement), " < ".join(f"{v:.3f}" for v in flec))
 
-    # 4. concept L + V
+    # 4. garde-fou du solveur : bilan d'énergie et d'équilibre de chaque calcul statique
+    m = plaque((0.0, 0.0, 10.0))
+    n0 = min(m.encastres)
+    m.forces[n0] = (50.0, 20.0, 30.0)  # effort sur un noeud encastré : il passe dans l'appui sans travailler
+    milieu = sorted(n for n, p in m.noeuds.items() if abs(p[0] - L / 2) < 1e-9)
+    m.appuis_x = set(milieu)
+    m.forces[milieu[0]] = (40.0, 0.0, 5.0)  # effort sur un noeud bloqué en X seulement
+    r = lancer(m, dossier, "garde")
+    verifier("garde-fou : bilan exact avec efforts sur des noeuds bloqués", r.essais == 1 and bilan_correct(r.bilan)
+             and abs(r.bilan["energie"]) < 1e-4 and r.bilan["equilibre"] < 1e-5,
+             f"énergie {r.bilan['energie']:+.1e}, équilibre {r.bilan['equilibre']:.1e}")
+    faux = copy.copy(r)
+    faux.energie = {e: 4.49 * v for e, v in r.energie.items()}  # le calcul faux observé : énergie +349 %
+    faux.reactions = {"ENCASTRE": {n: 0.76 * v for n, v in r.reactions["ENCASTRE"].items()}, "APPUI": r.reactions["APPUI"]}
+    b = bilan_statique(m, faux)
+    verifier("garde-fou : solution fausse détectée", not bilan_correct(b),
+             f"énergie {b['energie']:+.0%}, équilibre {b['equilibre']:.2f}")
+    m.encastres, m.appuis_x = set(), set()
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            lancer(m, dossier, "mecanisme")
+        verifier("garde-fou : mécanisme refusé", False, "aucune erreur levée")
+    except RuntimeError as e:
+        verifier("garde-fou : mécanisme refusé", "fausse" in str(e), str(e).split(" (")[0])
+
+    # 5. concept L + V
     cdc = CahierDesCharges.charger(RACINE / "cahiers" / "sae51_equerre.json")
     valeurs = json.loads((RACINE / "tests" / "donnees" / "sae51_L_V_optimum.json").read_text(encoding="utf-8"))["valeurs"]
     concept = ConceptJSON.charger(RACINE / "concepts" / "sae51_L_V.json", valeurs, cdc)

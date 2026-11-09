@@ -5,10 +5,12 @@ de l'ensemble mécano-soudé. Le format est volontairement simple pour être gé
 """
 from __future__ import annotations
 
+import math
 import os
 import re
 import shutil
 import subprocess
+import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -100,7 +102,8 @@ def ecrire_inp(modele: ModeleCoque, chemin: Path, analyse: str = "statique", n_m
         if m.appuis_x:
             lignes += ["*NODE PRINT, NSET=APPUI", "RF"]
         if details:
-            lignes += ["*EL PRINT, ELSET=EALL", "S", "*EL PRINT, ELSET=EALL", "ELSE"]
+            lignes += ["*EL PRINT, ELSET=EALL", "S"]
+        lignes += ["*EL PRINT, ELSET=EALL", "ELSE"]  # toujours : sert au bilan d'énergie de `lancer`
     elif details:
         lignes += ["*NODE PRINT, NSET=NALL", "U"]
     lignes.append("*END STEP")
@@ -111,20 +114,82 @@ def _par_lignes(ids: list[int], n: int = 12) -> list[str]:
     return [", ".join(str(i) for i in ids[k : k + n]) for k in range(0, len(ids), n)]
 
 
+TOLERANCE_ENERGIE = 0.05  # |énergie des éléments / travail des efforts - 1| toléré (Clapeyron)
+TOLERANCE_EQUILIBRE = 1e-3  # |efforts + réactions| / |efforts| toléré (équilibre global en translation)
+ESSAIS_CALCUL = 3  # calculs statiques lancés au plus avant de conclure à une solution fausse
+
+
+def bilan_statique(modele: ModeleCoque, res: Resultats) -> dict[str, float]:
+    """Contrôles d'une solution statique linéaire, les déplacements imposés étant nuls :
+    - energie : somme des énergies des éléments / (1/2 somme f.u) - 1, nul par le théorème de Clapeyron ;
+    - equilibre : |somme des efforts + somme des réactions| / |somme des efforts|, nul quand K u = f est
+      résolu exactement (les efforts intérieurs d'une structure s'équilibrent pour tout champ u).
+    Une solution juste donne 1e-7 aux deux. Le solveur SPOOLES multi-tâche (CalculiX 2.21) rend parfois, pour un
+    même fichier, une solution fausse : 3 calculs sur 40 du modèle L + V avec 4 tâches (énergie +2 %, +6 %,
+    +1 563 % ; équilibre faux de 4 à 18 % de l'effort), aucun sur 40 avec une tâche. Le contrôle d'équilibre est le
+    plus sûr des deux : il a pris les trois, celui d'énergie seul en aurait laissé passer un."""
+    travail = 0.5 * sum(float(np.dot(f, res.u_noeuds[n])) for n, f in modele.forces.items())
+    energie = float(sum(res.energie.values()))
+    # Équilibre de chaque ddl : effort intérieur = effort extérieur (+ réaction s'il est bloqué). CalculiX imprime en
+    # RF l'effort intérieur des noeuds du jeu, sur leurs 3 ddl (vérifié : un effort posé sur un noeud encastré n'y
+    # figure pas). Les efforts intérieurs s'équilibrant, efforts sur les ddl libres + RF des ddl bloqués = 0.
+    x_seul = np.array([1.0, 0.0, 0.0])
+    efforts, reactions = np.zeros(3), np.zeros(3)
+    for n, f in modele.forces.items():
+        if n not in modele.encastres:
+            efforts += np.asarray(f, dtype=float) * ((1.0 - x_seul) if n in modele.appuis_x else 1.0)
+    for n, rf in res.reactions.get("ENCASTRE", {}).items():
+        reactions += rf
+    for n, rf in res.reactions.get("APPUI", {}).items():
+        if n not in modele.encastres:
+            reactions += rf * x_seul
+    return {
+        "energie": energie / travail - 1 if travail > 0 else math.inf,
+        "equilibre": float(np.linalg.norm(efforts + reactions) / max(np.linalg.norm(efforts), 1e-30)),
+        "energie_Nmm": energie,
+        "travail_Nmm": travail,
+    }
+
+
+def bilan_correct(bilan: dict[str, float]) -> bool:
+    return abs(bilan["energie"]) <= TOLERANCE_ENERGIE and bilan["equilibre"] <= TOLERANCE_EQUILIBRE
+
+
 def lancer(modele: ModeleCoque, dossier: Path, nom: str = "job", analyse: str = "statique", n_modes: int = 3,
            fichiers: bool = True, details: bool = False):
     """Lance CalculiX. fichiers=False : pas de .frd (plus rapide), seuls le .dat et les facteurs sont lus.
-    details=True : voir `ecrire_inp` (lu dans Resultats.contraintes_ip, .energie, .modes)."""
+    details=True : voir `ecrire_inp` (lu dans Resultats.contraintes_ip, .energie, .modes).
+    Un calcul statique chargé est contrôlé (`bilan_statique`, rangé dans Resultats.bilan) et relancé tant que le
+    bilan est faux, jusqu'à ESSAIS_CALCUL fois ; au-delà (mécanisme, matrice singulière...) : RuntimeError."""
     dossier.mkdir(parents=True, exist_ok=True)
-    (dossier / f"{nom}.frd").unlink(missing_ok=True)
     ecrire_inp(modele, dossier / f"{nom}.inp", analyse, n_modes, fichiers, details)
-    env = dict(os.environ, OMP_NUM_THREADS=os.environ.get("GABARIT_THREADS", str(os.cpu_count() or 1)))
-    proc = subprocess.run(
-        [trouver_ccx(), "-i", nom], cwd=dossier, capture_output=True, text=True, timeout=3600, env=env
-    )
-    if proc.returncode != 0 or "*ERROR" in proc.stdout:
-        raise RuntimeError(f"CalculiX a échoué :\n{proc.stdout[-3000:]}\n{proc.stderr[-2000:]}")
-    return Resultats(dossier / f"{nom}.frd", dossier / f"{nom}.dat")
+    # une seule tâche par défaut : SPOOLES multi-tâche se trompe parfois (voir `bilan_statique`) et gagne peu sur
+    # ces modèles (L + V, 7 000 noeuds : 1,3 s en une tâche, 1,1 s en deux, 1,1 à 1,3 s en quatre) ;
+    # GABARIT_THREADS pour changer
+    env = dict(os.environ, OMP_NUM_THREADS=os.environ.get("GABARIT_THREADS", "1"))
+    controle = analyse == "statique" and bool(modele.forces)
+    bilans = []
+    for essai in range(1, (ESSAIS_CALCUL if controle else 1) + 1):
+        for ext in ("frd", "dat"):  # jamais de résultats d'un calcul précédent
+            (dossier / f"{nom}.{ext}").unlink(missing_ok=True)
+        proc = subprocess.run(
+            [trouver_ccx(), "-i", nom], cwd=dossier, capture_output=True, text=True, timeout=3600, env=env
+        )
+        if proc.returncode != 0 or "*ERROR" in proc.stdout:
+            raise RuntimeError(f"CalculiX a échoué :\n{proc.stdout[-3000:]}\n{proc.stderr[-2000:]}")
+        res = Resultats(dossier / f"{nom}.frd", dossier / f"{nom}.dat")
+        res.essais = essai
+        if not controle:
+            return res
+        res.bilan = bilan_statique(modele, res)
+        if bilan_correct(res.bilan):
+            return res
+        bilans.append(res.bilan)
+        if essai < ESSAIS_CALCUL:
+            warnings.warn(f"CalculiX ({dossier / nom}) : solution statique fausse (énergie {res.bilan['energie']:+.2%}, "
+                          f"équilibre {res.bilan['equilibre']:.1e}), calcul relancé", RuntimeWarning, stacklevel=2)
+    raise RuntimeError(f"CalculiX : solution statique fausse à chacun des {ESSAIS_CALCUL} essais (écarts d'énergie "
+                       + ", ".join(f"{b['energie']:+.2%}" for b in bilans) + ") : mécanisme ou matrice singulière ?")
 
 
 class Resultats:
@@ -138,6 +203,8 @@ class Resultats:
         self.facteurs_flambement = _lire_facteurs(dat)
         self.u_noeuds, self.reactions = _lire_dat_statique(dat)
         self.contraintes_ip, self.energie, self.modes = _lire_dat_details(dat)
+        self.bilan: dict[str, float] | None = None  # contrôles du calcul statique (voir `bilan_statique`)
+        self.essais = 1  # calculs lancés pour obtenir ce résultat
 
     def _lire_frd(self, chemin: Path) -> None:
         lignes = chemin.read_text().splitlines()
