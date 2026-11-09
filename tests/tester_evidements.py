@@ -25,7 +25,7 @@ from gabarit.etudes.concept_json import proposer_valeurs  # noqa: E402
 
 CDC = CahierDesCharges.charger(RACINE / "cahiers" / "sae51_equerre.json")
 BASE = json.loads((RACINE / "concepts" / "sae51_L_V.json").read_text(encoding="utf-8"))
-VALEURS = json.loads((RACINE / "resultats" / "sae51_L_V" / "synthese.json").read_text(encoding="utf-8"))["valeurs"]
+VALEURS = json.loads((RACINE / "tests" / "donnees" / "sae51_L_V_optimum.json").read_text(encoding="utf-8"))["valeurs"]
 resultats: list[tuple[str, bool]] = []
 
 

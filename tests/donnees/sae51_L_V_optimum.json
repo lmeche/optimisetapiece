@@ -1,0 +1,34 @@
+{
+  "description": "Meilleur point de l'optimisation V1 du concept concepts/sae51_L_V.json (168 essais, maille d'exploration 8 mm), figé ici pour que les tests ne dépendent pas du dossier resultats/ (non versionné).",
+  "concept": "concepts/sae51_L_V.json",
+  "valeurs": {
+    "t_L": 5.0,
+    "t_V": 5.0,
+    "ecart_vis": 60,
+    "u_b": 0.3342474550285505,
+    "z_dessus": 192.31397284089252,
+    "u_bas": 0.5066533167104433,
+    "u_pied": 0.37412350273788325,
+    "u_jambe": 0.6513008663103119,
+    "x_diag": 313.0981758081457,
+    "u_bv": 0.5860626053978686,
+    "h_ret_cotes": 0.0,
+    "h_ret_bout": 0.0,
+    "h_ret_diag": 0.0,
+    "h_ret_dos": 33.25
+  },
+  "verification": {
+    "6 mm": {
+      "masse_kg": 4.375629446411227,
+      "effort_tenu": 15007.519011425105,
+      "masse_par_kN": 0.2915624789867063,
+      "facteur_flambement": 3.11714
+    },
+    "4 mm": {
+      "masse_kg": 4.375629446411227,
+      "effort_tenu": 12584.919245025347,
+      "masse_par_kN": 0.3476883213327615,
+      "facteur_flambement": 3.012751
+    }
+  }
+}

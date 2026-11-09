@@ -50,7 +50,9 @@ def trouver_ccx() -> str:
 
 
 def ecrire_inp(modele: ModeleCoque, chemin: Path, analyse: str = "statique", n_modes: int = 3,
-               fichiers: bool = True) -> None:
+               fichiers: bool = True, details: bool = False) -> None:
+    """details=True : en statique, contraintes aux points d'intégration et énergie de chaque élément (.dat) ;
+    en flambement, déformée de chaque mode aux noeuds d'origine (.dat)."""
     m = modele
     lignes = ["*HEADING", "Gabarit", "*NODE, NSET=NALL"]
     lignes += [f"{i}, {x:.6g}, {y:.6g}, {z:.6g}" for i, (x, y, z) in sorted(m.noeuds.items())]
@@ -97,6 +99,10 @@ def ecrire_inp(modele: ModeleCoque, chemin: Path, analyse: str = "statique", n_m
         lignes += ["*NODE PRINT, NSET=NALL", "U", "*NODE PRINT, NSET=ENCASTRE", "RF"]
         if m.appuis_x:
             lignes += ["*NODE PRINT, NSET=APPUI", "RF"]
+        if details:
+            lignes += ["*EL PRINT, ELSET=EALL", "S", "*EL PRINT, ELSET=EALL", "ELSE"]
+    elif details:
+        lignes += ["*NODE PRINT, NSET=NALL", "U"]
     lignes.append("*END STEP")
     chemin.write_text("\n".join(lignes) + "\n")
 
@@ -106,11 +112,12 @@ def _par_lignes(ids: list[int], n: int = 12) -> list[str]:
 
 
 def lancer(modele: ModeleCoque, dossier: Path, nom: str = "job", analyse: str = "statique", n_modes: int = 3,
-           fichiers: bool = True):
-    """Lance CalculiX. fichiers=False : pas de .frd (plus rapide), seuls le .dat et les facteurs sont lus."""
+           fichiers: bool = True, details: bool = False):
+    """Lance CalculiX. fichiers=False : pas de .frd (plus rapide), seuls le .dat et les facteurs sont lus.
+    details=True : voir `ecrire_inp` (lu dans Resultats.contraintes_ip, .energie, .modes)."""
     dossier.mkdir(parents=True, exist_ok=True)
     (dossier / f"{nom}.frd").unlink(missing_ok=True)
-    ecrire_inp(modele, dossier / f"{nom}.inp", analyse, n_modes, fichiers)
+    ecrire_inp(modele, dossier / f"{nom}.inp", analyse, n_modes, fichiers, details)
     env = dict(os.environ, OMP_NUM_THREADS=os.environ.get("GABARIT_THREADS", str(os.cpu_count() or 1)))
     proc = subprocess.run(
         [trouver_ccx(), "-i", nom], cwd=dossier, capture_output=True, text=True, timeout=3600, env=env
@@ -130,6 +137,7 @@ class Resultats:
             self._lire_frd(frd)
         self.facteurs_flambement = _lire_facteurs(dat)
         self.u_noeuds, self.reactions = _lire_dat_statique(dat)
+        self.contraintes_ip, self.energie, self.modes = _lire_dat_details(dat)
 
     def _lire_frd(self, chemin: Path) -> None:
         lignes = chemin.read_text().splitlines()
@@ -205,3 +213,54 @@ def _lire_dat_statique(dat: Path) -> tuple[dict[int, np.ndarray], dict[str, dict
         elif champs:
             cible = None
     return u, rf
+
+
+def _lire_dat_details(dat: Path) -> tuple[dict[int, np.ndarray], dict[int, float], list[dict[int, np.ndarray]]]:
+    """Sorties détaillées du .dat (vides si absentes) :
+    - contraintes aux 8 points d'intégration de chaque élément (coque expansée en brique C3D20R), tableau
+      (8, 6) des composantes sxx, syy, szz, sxy, sxz, syz dans le repère global. Ordre des points (vérifié sur
+      une console en flexion) : le premier indice varie le plus vite, les points 1 à 4 sont sur la demi-épaisseur
+      côté -normale (zeta = -1/racine(3)), les points 5 à 8 côté +normale ;
+    - énergie de déformation de chaque élément (N.mm) ;
+    - déformée de chaque mode de flambement aux noeuds d'origine, dans l'ordre des modes."""
+    contraintes: dict[int, np.ndarray] = {}
+    energie: dict[int, float] = {}
+    modes: list[dict[int, np.ndarray]] = []
+    if not dat.exists():
+        return contraintes, energie, modes
+    texte = dat.read_text()
+    if "integ.pnt." not in texte and "internal energy" not in texte and "E I G E N V A L U E" not in texte:
+        return contraintes, energie, modes
+    cible = None
+    brut: dict[int, list[list[float]]] = {}
+    for ligne in texte.splitlines():
+        if "stresses (elem, integ.pnt." in ligne:
+            cible = "S"
+            continue
+        if "internal energy (element, energy)" in ligne:
+            cible = "E"
+            continue
+        if "E I G E N V A L U E" in ligne:
+            cible = "attente_mode"
+            continue
+        if "displacements (vx,vy,vz)" in ligne:
+            if cible == "attente_mode":
+                modes.append({})
+                cible = "U"
+            else:
+                cible = None
+            continue
+        champs = ligne.split()
+        if not champs:  # lignes vides autour des blocs
+            continue
+        if cible == "S" and len(champs) >= 8 and champs[0].isdigit():
+            brut.setdefault(int(champs[0]), []).append([float(c) for c in champs[2:8]])
+        elif cible == "E" and len(champs) == 2 and champs[0].isdigit():
+            energie[int(champs[0])] = float(champs[1])
+        elif cible == "U" and len(champs) == 4 and champs[0].isdigit():
+            modes[-1][int(champs[0])] = np.array([float(c) for c in champs[1:]])
+        elif cible in ("S", "E", "U"):
+            cible = None
+    for e, pts in brut.items():
+        contraintes[e] = np.array(pts)
+    return contraintes, energie, modes
