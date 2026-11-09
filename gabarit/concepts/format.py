@@ -224,10 +224,7 @@ class ConceptJSON:
                 par_face.setdefault(f"{tole['nom']}.{face}", []).append(_evaluer_evidement(s, env))
         if not par_face:
             return
-        ap = next((f for f in g.faces if f.id == g.appui), None)
-        ctx = ev.Contexte(g.faces, g.fixation, g.appui, _trous_utilises(g, self.cdc),
-                          np.array([env["X_CHARGE"], 0.0, ap.points[0, 2] if ap is not None else 0.0]),
-                          lambda t: _distance_pli(t, self.cdc.procede.ves_disponibles))
+        ctx = contexte_evidements(g, self.cdc, env["X_CHARGE"])
         for f in g.faces:
             if f.id not in par_face:
                 continue
@@ -390,23 +387,34 @@ class ConceptJSON:
         gmsh.option.setNumber("Mesh.RecombineAll", 1)
         gmsh.option.setNumber("Mesh.SubdivisionAlgorithm", 1)
         gmsh.option.setNumber("Mesh.SecondOrderIncomplete", 1)
-        gmsh.model.mesh.generate(2)
-        gmsh.model.mesh.setOrder(2)
-        tags, coords, _ = gmsh.model.mesh.getNodes()
-        noeuds = {int(t): tuple(coords[3 * k : 3 * k + 3]) for k, t in enumerate(tags)}
-        elements, epaisseurs = {}, {}
-        self.faces_elements: dict[int, list[str]] = {}  # élément -> faces qu'il représente (2 pour un doublage)
-        for tag, faces_couvrantes in couverture.items():
-            t = sum({f.tole: f.t for f in faces_couvrantes}.values())  # doublage : épaisseurs additionnées
-            types, etags, enodes = gmsh.model.mesh.getElements(2, tag)
-            for ty, et, en in zip(types, etags, enodes):
-                if ty != 16:
-                    raise RuntimeError(f"élément de type {ty} inattendu")
-                for k, e in enumerate(et):
-                    elements[int(e)] = [int(n) for n in en[8 * k : 8 * k + 8]]
-                    epaisseurs[int(e)] = t
-                    self.faces_elements[int(e)] = [f.id for f in faces_couvrantes]
+        for essai in range(2):
+            gmsh.model.mesh.generate(2)
+            gmsh.model.mesh.setOrder(2)
+            tags, coords, _ = gmsh.model.mesh.getNodes()
+            noeuds = {int(t): tuple(coords[3 * k : 3 * k + 3]) for k, t in enumerate(tags)}
+            elements, epaisseurs = {}, {}
+            self.faces_elements: dict[int, list[str]] = {}  # élément -> faces qu'il représente (2 pour un doublage)
+            for tag, faces_couvrantes in couverture.items():
+                t = sum({f.tole: f.t for f in faces_couvrantes}.values())  # doublage : épaisseurs additionnées
+                types, etags, enodes = gmsh.model.mesh.getElements(2, tag)
+                for ty, et, en in zip(types, etags, enodes):
+                    if ty != 16:
+                        raise RuntimeError(f"élément de type {ty} inattendu")
+                    for k, e in enumerate(et):
+                        elements[int(e)] = [int(n) for n in en[8 * k : 8 * k + 8]]
+                        epaisseurs[int(e)] = t
+                        self.faces_elements[int(e)] = [f.id for f in faces_couvrantes]
+            mauvais = elements_retournes(noeuds, elements)
+            if not mauvais:
+                break
+            if essai == 0:  # second essai : autre algorithme de surface et lissage renforcé
+                gmsh.model.mesh.clear()
+                gmsh.option.setNumber("Mesh.Algorithm", 8)
+                gmsh.option.setNumber("Mesh.Smoothing", 10)
         gmsh.finalize()
+        if mauvais:
+            faces = sorted({f for e in mauvais for f in self.faces_elements.get(e, [])})
+            raise RuntimeError(f"maillage invalide : {len(mauvais)} éléments retournés ({', '.join(faces)})")
         utilises = {n for c in elements.values() for n in c}
         return {n: c for n, c in noeuds.items() if n in utilises}, elements, epaisseurs
 
@@ -445,6 +453,10 @@ class ConceptJSON:
         for a, b in self.definition.get("soudures", []):
             if a in noeuds_face and b in noeuds_face and len(noeuds_face[a] & noeuds_face[b]) < 3:
                 raise RuntimeError(f"soudure {a}/{b} absente du maillage (aucun noeud commun)")
+
+    def contexte_evidements(self) -> ev.Contexte:
+        """Ce qu'il faut savoir de l'assemblage pour placer une découpe (zones protégées)."""
+        return contexte_evidements(self._geo, self.cdc, self.env["X_CHARGE"])
 
     def faces_proches(self, p, tol: float = 1.0) -> list[str]:
         """Faces qui passent par le point p (à une demi-épaisseur près) : sert à nommer une zone du modèle."""
@@ -489,6 +501,13 @@ def _evaluer_evidement(s: dict, env: dict) -> dict:
         e["points"] = [[evaluer_expr(c, env) for c in pt] for pt in s["points"]]
         e["rayon"] = evaluer_expr(s["rayon"], env) if "rayon" in s else None
     return e
+
+
+def contexte_evidements(g: Geometrie, cdc: CahierDesCharges, x_charge: float) -> ev.Contexte:
+    ap = next((f for f in g.faces if f.id == g.appui), None)
+    return ev.Contexte(g.faces, g.fixation, g.appui, _trous_utilises(g, cdc),
+                       np.array([x_charge, 0.0, ap.points[0, 2] if ap is not None else 0.0]),
+                       lambda t: _distance_pli(t, cdc.procede.ves_disponibles))
 
 
 def _distance_pli(t: float, ves: list[float]) -> float:
@@ -652,6 +671,21 @@ def _direction_interieure(f: Face, a: np.ndarray, u: np.ndarray) -> np.ndarray:
     d = np.cross(f.normale(), u)
     centre = f.points.mean(axis=0)
     return d if np.dot(centre - a, d) > 0 else -d
+
+
+def elements_retournes(noeuds: dict, elements: dict[int, list[int]]) -> list[int]:
+    """Quadrangles non convexes ou retournés : à un coin, le produit vectoriel des deux arêtes n'a pas le sens
+    de la normale de l'élément (CalculiX refuserait le calcul : jacobien négatif)."""
+    if not elements:
+        return []
+    ids = list(elements)
+    p = np.array([[noeuds[n] for n in elements[e][:4]] for e in ids])  # (n, 4, 3)
+    normale = np.cross(p[:, 2] - p[:, 0], p[:, 3] - p[:, 1])
+    mauvais = np.zeros(len(ids), bool)
+    for k in range(4):
+        a, b, c = p[:, k], p[:, (k + 1) % 4], p[:, (k + 3) % 4]
+        mauvais |= np.einsum("ij,ij->i", np.cross(b - a, c - a), normale) <= 0
+    return [ids[i] for i in np.flatnonzero(mauvais)]
 
 
 def _connexe(elements: dict[int, list[int]]) -> bool:

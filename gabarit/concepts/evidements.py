@@ -399,12 +399,14 @@ def _segments_communs(f1, f2, tol: float = 1e-6) -> list[np.ndarray]:
     return segs
 
 
-def chaines_contour(anneau: np.ndarray, angle_vif: float = 20.0) -> list[tuple[str, np.ndarray]]:
+def chaines_contour(anneau: np.ndarray, angle_vif: float = 20.0, ecart_min: float = 0.5) -> list[tuple[str, np.ndarray]]:
     """Découpe un contour fermé (k, 3) en morceaux pour la CAO et le maillage : ("ligne", 2 points) pour les
     segments droits, ("spline", points) pour les arcs. Coupure aux angles vifs et aux longs segments droits,
-    pour qu'une spline ne passe jamais au large d'un coin ou d'un bord droit."""
-    p = np.asarray(anneau, float)
-    p = p[np.linalg.norm(np.roll(p, -1, axis=0) - p, axis=1) > 1e-6]  # points doublés retirés
+    pour qu'une spline ne passe jamais au large d'un coin ou d'un bord droit. Les points à moins de `ecart_min`
+    du précédent sont retirés : les opérations de tampon successives laissent des grappes de points presque
+    confondus, qui deviendraient des courbes de quelques centièmes de mm et des éléments retournés au maillage
+    (constaté sur les poches tirées de l'optimisation topologique)."""
+    p = _espacer(np.asarray(anneau, float), ecart_min)
     n = len(p)
     seg = np.roll(p, -1, axis=0) - p  # seg[i] : de p[i] à p[i+1]
     L = np.linalg.norm(seg, axis=1)
@@ -430,6 +432,17 @@ def chaines_contour(anneau: np.ndarray, angle_vif: float = 20.0) -> list[tuple[s
         else:
             sortie.append(("spline", pts))
     return sortie
+
+
+def _espacer(p: np.ndarray, ecart_min: float) -> np.ndarray:
+    """Points d'un contour fermé espacés d'au moins ecart_min (le premier point est gardé)."""
+    garde = [0]
+    for i in range(1, len(p)):
+        if np.linalg.norm(p[i] - p[garde[-1]]) >= ecart_min:
+            garde.append(i)
+    while len(garde) > 3 and np.linalg.norm(p[garde[-1]] - p[garde[0]]) < ecart_min:
+        garde.pop()
+    return p[garde]
 
 
 def rayon_courbure_min(anneau: np.ndarray) -> float:

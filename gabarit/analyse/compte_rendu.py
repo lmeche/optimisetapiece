@@ -186,7 +186,10 @@ class CompteRendu:
                (f"Énergie de déformation des éléments {c['energie_Nmm']:.1f} N.mm pour un travail de l'effort de "
                 f"{c['travail_Nmm']:.1f} N.mm (écart {c['ecart_energie_pct']:+.3f} %). Masse maillée "
                 f"{c['masse_maillee_kg']:.3f} kg pour {m['masse_kg']:.3f} kg. Identité 1000 rho/Re x L_eq/eta = "
-                f"{c['identite_kg_par_kN']:.4f} kg/kN.")]
+                f"{c['identite_kg_par_kN']:.4f} kg/kN. Résultante des efforts et des réactions "
+                f"{c.get('equilibre', math.nan):.1e} de l'effort"
+                + (f" (solution obtenue au calcul n° {c['essais_calcul']}, les précédents étant faux)"
+                   if c.get("essais_calcul", 1) > 1 else "") + ".")]
         return "\n".join(md)
 
 
@@ -254,7 +257,8 @@ def analyser(concept, cdc: CahierDesCharges, taille: float = 6.0, flambement: bo
     cr.controle = {"energie_Nmm": float(champ.energie.sum()), "travail_Nmm": travail,
                    "ecart_energie_pct": 100 * (float(champ.energie.sum()) / travail - 1) if travail else math.nan,
                    "masse_maillee_kg": rho * float(champ.volume.sum()),
-                   "identite_kg_par_kN": 1000 * rho * cr.l_eq_mm / (cr.eta * Re)}
+                   "identite_kg_par_kN": 1000 * rho * cr.l_eq_mm / (cr.eta * Re),
+                   "equilibre": (res.bilan or {}).get("equilibre", math.nan), "essais_calcul": res.essais}
     cr.pistes = pistes(cr, geo)
     return cr
 
@@ -387,46 +391,53 @@ def _legende(points: np.ndarray, a: np.ndarray, fleche: str) -> str:
 
 def _carte(face, champ: ChampElements, dans: np.ndarray, sigma_ref: float, p_crit,
            exclus: np.ndarray) -> tuple[list[str], list[str]]:
-    """Carte d'utilisation d'une face : chaque case montre la plus forte peau des éléments dont le centre y tombe
-    (l'élément le plus proche si la case n'en contient aucun)."""
+    """Carte d'utilisation d'une face (peau en dizaines de % de sigma_utile)."""
+    idx = np.flatnonzero(dans)
+    u = champ.vm_peau[idx] / sigma_ref
+    codes = np.where(exclus[idx], -1, np.where(u >= 1.0 + 1e-9, 10, np.minimum(9, (10 * u).astype(int))))
+    symboles = {-1: "~", 10: "!", **{k: NIVEAUX[k] for k in range(10)}}
+    return carte_face(face, champ.centre[idx], codes, symboles, p_crit)
+
+
+def carte_face(face, centres: np.ndarray, codes: np.ndarray, symboles: dict[int, str],
+               marque=None) -> tuple[list[str], list[str]]:
+    """Carte texte d'une face : chaque case montre le plus grand code des éléments dont le centre y tombe (celui
+    de l'élément le plus proche si elle n'en contient aucun), un espace hors de la tôle, X au point `marque`.
+    Une case est deux fois plus haute que large, comme un caractère. Renvoie les lignes et la légende des axes."""
     o, e1, e2, legendes = repere_lisible(face)
     p2 = np.stack([(face.points - o) @ e1, (face.points - o) @ e2], axis=1)
     matiere = Polygon(p2, [np.stack([(np.asarray(t) - o) @ e1, (np.asarray(t) - o) @ e2], axis=1) for t in face.trous])
     (x0, y0), (x1, y1) = p2.min(axis=0), p2.max(axis=0)
     L1, L2 = max(x1 - x0, 1e-6), max(y1 - y0, 1e-6)
-    w = max(L1, L2) / COLONNES_CARTE  # une case est deux fois plus haute que large (caractères)
+    w = max(L1, L2) / COLONNES_CARTE
     nc, nl = max(1, round(L1 / w)), max(1, round(L2 / (2 * w)))
     wc, hc = L1 / nc, L2 / nl  # pavage exact du rectangle englobant
-    idx = np.flatnonzero(dans)
-    c2 = np.stack([(champ.centre[idx] - o) @ e1, (champ.centre[idx] - o) @ e2], axis=1)
-    u = np.where(exclus[idx], -0.5, champ.vm_peau[idx] / sigma_ref)  # -0,5 : zone exclue du critère
+    c2 = np.stack([(centres - o) @ e1, (centres - o) @ e2], axis=1).reshape(-1, 2)
+    codes = np.asarray(codes, int)
     arbre = cKDTree(c2) if len(c2) else None
-    col = np.clip(((c2[:, 0] - x0) / wc).astype(int), 0, nc - 1)
-    lig = np.clip(((c2[:, 1] - y0) / hc).astype(int), 0, nl - 1)
-    grille = np.full((nl, nc), -1.0)
-    np.maximum.at(grille, (lig, col), u)
-    critique = None
-    if p_crit is not None:
-        q = np.asarray(p_crit) - o
-        critique = (min(nl - 1, max(0, int(((q @ e2) - y0) / hc))), min(nc - 1, max(0, int(((q @ e1) - x0) / wc))))
+    vide = -(10**6)
+    grille = np.full((nl, nc), vide)
+    if len(c2):
+        col = np.clip(((c2[:, 0] - x0) / wc).astype(int), 0, nc - 1)
+        lig = np.clip(((c2[:, 1] - y0) / hc).astype(int), 0, nl - 1)
+        np.maximum.at(grille, (lig, col), codes)
+    repere = None
+    if marque is not None:
+        q = np.asarray(marque) - o
+        repere = (min(nl - 1, max(0, int(((q @ e2) - y0) / hc))), min(nc - 1, max(0, int(((q @ e1) - x0) / wc))))
     zone = matiere.buffer(0.25 * min(wc, hc))
     lignes = []
     for i in range(nl - 1, -1, -1):  # le haut de la carte d'abord
         s = []
         for j in range(nc):
             v = grille[i, j]
-            if v == -1.0:
+            if v == vide:
                 centre = Point(x0 + (j + 0.5) * wc, y0 + (i + 0.5) * hc)
                 if arbre is None or not zone.contains(centre):
                     s.append(" ")
                     continue
-                v = u[arbre.query([centre.x, centre.y])[1]]
-            if critique == (i, j):
-                s.append("X")
-            elif v < 0:
-                s.append("~")
-            else:
-                s.append("!" if v >= 1.0 + 1e-9 else NIVEAUX[min(9, int(10 * v))])
+                v = codes[arbre.query([centre.x, centre.y])[1]]
+            s.append("X" if repere == (i, j) else symboles[int(v)])
         lignes.append("".join(s).rstrip())
     return lignes, legendes
 
