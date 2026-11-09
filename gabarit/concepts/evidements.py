@@ -120,12 +120,13 @@ class ResultatEvidements:
         return float(sum(p.area for p in self.trous_2d))
 
 
-def zones_protegees(face, ctx: Contexte) -> BaseGeometry:
-    """Union des zones de la face où l'on ne découpe pas, dans le repère plan de la face."""
+def liaisons(face, faces: list) -> list[tuple[str, object, BaseGeometry]]:
+    """Liaisons d'une face avec les autres, dans le repère plan de la face : (« pli », « soudure » ou
+    « doublage », autre face, géométrie 2D : ligne pour un pli ou une soudure, surface pour un doublage)."""
     rep = Repere.de(face.points, face.normale())
     poly = Polygon(rep.vers_2d(face.points))
-    zones: list[BaseGeometry] = []
-    for g in ctx.faces:
+    sortie: list[tuple[str, object, BaseGeometry]] = []
+    for g in faces:
         if g is face:
             continue
         ng = g.normale()
@@ -134,14 +135,12 @@ def zones_protegees(face, ctx: Contexte) -> BaseGeometry:
         if g.tole == face.tole:
             if coplanaires:  # même tôle, même plan : tôle continue découpée en deux faces, pas un pli
                 continue
-            for seg in _segments_communs(face, g):
-                zones.append(_tampon(LineString(rep.vers_2d(seg)), ctx.d_pli(face.t)))
+            sortie += [("pli", g, LineString(rep.vers_2d(seg))) for seg in _segments_communs(face, g)]
             continue
-        ms = marge_soudure(max(face.t, g.t))
-        if coplanaires:  # doublage : toute la zone recouverte, plus la marge de soudure
+        if coplanaires:  # doublage : toute la zone recouverte
             inter = poly.intersection(Polygon(rep.vers_2d(g.points)))
             if inter.area > 1.0:
-                zones.append(_tampon(inter, ms))
+                sortie.append(("doublage", g, inter))
             continue
         # arêtes de g posées dans le plan de la face (jonction en T, arête commune)
         d = rep.distance_plan(g.points)
@@ -150,7 +149,7 @@ def zones_protegees(face, ctx: Contexte) -> BaseGeometry:
             if abs(d[i]) < TOL_PLAN and abs(d[j]) < TOL_PLAN:
                 ligne = LineString(rep.vers_2d(g.points[[i, j]])).intersection(poly.buffer(0.5))
                 if ligne.length > 1.0:
-                    zones.append(_tampon(ligne, ms))
+                    sortie += [("soudure", g, m) for m in _lignes(ligne)]
         # arêtes de la face posées sur g (la face est l'âme d'un T soudé sur g)
         rg = Repere.de(g.points, ng)
         pg = Polygon(rg.vers_2d(g.points))
@@ -162,7 +161,17 @@ def zones_protegees(face, ctx: Contexte) -> BaseGeometry:
                 if ligne.length > 1.0:
                     for morceau in _lignes(ligne):
                         pts3 = rg.vers_3d(np.asarray(morceau.coords))
-                        zones.append(_tampon(LineString(rep.vers_2d(pts3)), ms))
+                        sortie.append(("soudure", g, LineString(rep.vers_2d(pts3))))
+    return sortie
+
+
+def zones_protegees(face, ctx: Contexte) -> BaseGeometry:
+    """Union des zones de la face où l'on ne découpe pas, dans le repère plan de la face."""
+    rep = Repere.de(face.points, face.normale())
+    zones: list[BaseGeometry] = []
+    for nature, g, geo in liaisons(face, ctx.faces):
+        d = ctx.d_pli(face.t) if nature == "pli" else marge_soudure(max(face.t, g.t))
+        zones.append(_tampon(geo, d))
     if face.id == ctx.fixation:
         x0 = float(face.points[0, 0])
         for y, z in ctx.trous_vis:
