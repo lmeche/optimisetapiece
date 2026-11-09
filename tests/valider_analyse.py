@@ -15,6 +15,7 @@ Lancer :  python tests/valider_analyse.py
 """
 from __future__ import annotations
 
+import itertools
 import json
 import math
 import sys
@@ -118,7 +119,7 @@ def main() -> int:
              f"{rb.facteurs_flambement[0]:.2f} / {euler:.2f}")
     mode = rb.modes[0]
     flec = [np.mean([abs(mode[n][2]) for n, p in m.noeuds.items() if abs(p[0] - x) < 1e-9]) for x in (25, 50, 75, 100)]
-    verifier("colonne : la déformée du mode 1 croît vers le bout", all(a < b for a, b in zip(flec, flec[1:])) and
+    verifier("colonne : la déformée du mode 1 croît vers le bout", all(a < b for a, b in itertools.pairwise(flec)) and
              len(rb.modes) == len(rb.facteurs_flambement), " < ".join(f"{v:.3f}" for v in flec))
 
     # 4. concept L + V
