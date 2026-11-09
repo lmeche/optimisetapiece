@@ -1,4 +1,5 @@
-"""Export STEP d'un concept : chaque face devient une plaque de son épaisseur (plis vifs, sans rayon).
+"""Export STEP d'un concept : chaque face devient une plaque de son épaisseur (plis vifs, sans rayon), percée
+de ses évidements.
 
 Les faces d'une même tôle sont fusionnées en un solide ; chaque tôle reste un corps séparé (pièces à
 souder). Une face doublée contre une face d'une autre tôle (même plan) est décalée de la demi-somme des
@@ -11,7 +12,7 @@ from pathlib import Path
 import gmsh
 import numpy as np
 
-from gabarit.concepts.format import ConceptJSON
+from gabarit.concepts.format import ConceptJSON, surface_percee
 
 
 def _decalages(concept: ConceptJSON) -> dict[str, np.ndarray]:
@@ -56,10 +57,8 @@ def exporter_step(concept: ConceptJSON, chemin: str | Path) -> Path:
     par_tole: dict[str, list[tuple[int, int]]] = {}
     for f in g.faces:
         n = f.normale()
-        base = f.points - n * f.t / 2 + dec.get(f.id, 0)
-        ids = [occ.addPoint(*p) for p in base]
-        lignes = [occ.addLine(ids[i], ids[(i + 1) % len(ids)]) for i in range(len(ids))]
-        s = occ.addPlaneSurface([occ.addCurveLoop(lignes)])
+        decalage = -n * f.t / 2 + dec.get(f.id, 0)
+        s = surface_percee(occ, f, points=f.points + decalage, decalage=decalage)  # avec ses évidements
         vol = [e for e in occ.extrude([(2, s)], *(n * f.t)) if e[0] == 3]
         par_tole.setdefault(f.tole, []).extend(vol)
     for vols in par_tole.values():

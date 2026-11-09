@@ -17,7 +17,8 @@ from gabarit.cahier_des_charges import CahierDesCharges
 from gabarit.concepts.format import ConceptJSON
 from gabarit.etudes.concept_json import proposer_valeurs
 
-TYPES_VARIABLES = {"epaisseur", "choix", "reel", "fraction", "retour"}
+TYPES_VARIABLES = {"epaisseur", "choix", "reel", "fraction", "retour", "evidement"}
+TYPES_EVIDEMENTS = {"decalage", "cercle", "polygone"}
 TAILLE_CALCUL_RAPIDE = 10.0
 PART_TIRAGES_VALIDES_MIN = 0.5  # un tirage invalide ne coûte presque rien à l'optimiseur (rejeté avant maillage)
 
@@ -60,7 +61,7 @@ def controler_structure(d) -> list[str]:
         if ty == "reel" and not (isinstance(s.get("min"), (int, float)) and isinstance(s.get("max"), (int, float))
                                  and s["min"] < s["max"]):
             e.append(f"variable « {nom} » : « min » < « max » attendus")
-        if ty == "retour":
+        if ty in ("retour", "evidement"):
             if s.get("tole") not in noms_toles:
                 e.append(f"variable « {nom} » : « tole » doit nommer une des tôles ({', '.join(map(str, noms_toles))})")
             if not (isinstance(s.get("max"), (int, float)) and s["max"] > 0):
@@ -69,10 +70,35 @@ def controler_structure(d) -> list[str]:
         if not (isinstance(t, dict) and isinstance(t.get("nom"), str) and "epaisseur" in t
                 and isinstance(t.get("faces"), dict) and t["faces"]):
             e.append("chaque tôle doit avoir « nom », « epaisseur » et des « faces »")
+            continue
+        e += _controler_evidements(t)
     if not isinstance(d.get("soudures", []), list):
         e.append("« soudures » doit être une liste de paires [\"tole.face\", \"tole.face\"]")
     if len(set(noms_toles)) != len(noms_toles):
         e.append("deux tôles portent le même nom")
+    return e
+
+
+def _controler_evidements(tole: dict) -> list[str]:
+    e = []
+    evs = tole.get("evidements", [])
+    if not isinstance(evs, list):
+        return [f"tôle {tole['nom']} : « evidements » doit être une liste"]
+    for k, s in enumerate(evs, start=1):
+        nom = f"tôle {tole['nom']}, évidement {k}"
+        if not isinstance(s, dict) or s.get("type") not in TYPES_EVIDEMENTS or not isinstance(s.get("face"), str):
+            e.append(f"{nom} : il faut « face » et « type » ({', '.join(sorted(TYPES_EVIDEMENTS))})")
+            continue
+        if s["type"] == "decalage" and "marge" not in s:
+            e.append(f"{nom} : un « decalage » a besoin d'une « marge »")
+        if s["type"] == "decalage" and not all(
+                isinstance(n, list) and len(n) == 2 and all(isinstance(b, list) and len(b) == 2 for b in n)
+                for n in s.get("nervures", [])):
+            e.append(f"{nom} : chaque nervure s'écrit [[arête, position], [arête, position]]")
+        if s["type"] == "cercle" and not (isinstance(s.get("centre"), list) and len(s["centre"]) == 3 and "diametre" in s):
+            e.append(f"{nom} : un « cercle » a besoin de « centre » [x, y, z] et de « diametre »")
+        if s["type"] == "polygone" and not (isinstance(s.get("points"), list) and len(s["points"]) >= 3):
+            e.append(f"{nom} : un « polygone » a besoin d'au moins 3 « points »")
     return e
 
 
