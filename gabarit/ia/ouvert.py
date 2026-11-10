@@ -43,14 +43,14 @@ def concevoir_ouvert(n_concepts: int = 3, url: str = URL_OLLAMA, modele: str = "
                      exemples: list[Path] | None = None, sortie: Path = RACINE / "concepts" / "ia",
                      dossier_journal: Path | None = None, consigne: str = "", calcul: bool = True,
                      outils: bool = True, delai: float = 600.0, tours_max: int = TOURS_MAX,
-                     afficher=print) -> Session:
+                     lecons: str | None = None, afficher=print) -> Session:
     cdc = CahierDesCharges.charger(chemin_cdc)
     exemples = exemples if exemples is not None else [RACINE / "concepts" / "sae51_L_V.json"]
     session = Session(dossier_journal or RACINE / "resultats" / "concepteur" / time.strftime("%Y%m%d_%H%M%S"))
     quoi = "un concept" if n_concepts == 1 else f"{n_concepts} concepts différents"
     demande = (f"Propose {quoi} pour ce cahier des charges, chacun vérifié puis enregistré."
                + (f"\n\nConsigne de l'utilisateur : {consigne}" if consigne else ""))
-    messages = [{"role": "system", "content": prompt_systeme(cdc, exemples) + CONSIGNE_TEXTE},
+    messages = [{"role": "system", "content": prompt_systeme(cdc, exemples, lecons) + CONSIGNE_TEXTE},
                 {"role": "user", "content": demande}]
     session.journal(f"# IA Concepteur (modèle ouvert)\n\nServeur {url}, modèle {modele}.\n\n**Demande** : {demande}")
     entetes = {"Content-Type": "application/json", **({"Authorization": f"Bearer {cle}"} if cle else {})}
