@@ -1,0 +1,901 @@
+{
+ "version": 1,
+ "cycles": 0,
+ "fiches": [
+  {
+   "id": "F001",
+   "nom": "L + V (idée d'Iwan)",
+   "fichier": "concepts/sae51_L_V.json",
+   "valeurs": {
+    "t_L": 5.0,
+    "t_V": 5.0,
+    "ecart_vis": 60,
+    "u_b": 0.3342474550285505,
+    "z_dessus": 192.31397284089252,
+    "u_bas": 0.5066533167104433,
+    "u_pied": 0.37412350273788325,
+    "u_jambe": 0.6513008663103119,
+    "x_diag": 313.0981758081457,
+    "u_bv": 0.5860626053978686,
+    "h_ret_cotes": 0.0,
+    "h_ret_bout": 0.0,
+    "h_ret_diag": 0.0,
+    "h_ret_dos": 33.25
+   },
+   "origine": "humain (idée d'Iwan)",
+   "parent": null,
+   "experience": null,
+   "principe": "Une tôle pliée en L (dos vissé sur la grille, dessus qui reçoit l'appui) et une tôle pliée en V dessous : une jambe doublée contre le dos, une diagonale qui remonte souder sous le dessus. Dos, dessus et diagonale forment un triangle. Retours optionnels sur les bords du dessus et de la diagonale.",
+   "date": "2026-11-10 01:06",
+   "faisable": true,
+   "erreurs": [],
+   "taille": 6.0,
+   "mesures": {
+    "masse_kg": 4.375629446411227,
+    "effort_tenu_N": 15815.648652728927,
+    "kg_par_kN": 0.2766645581530562,
+    "sigma_utile": 145.76386025129744,
+    "flambement": 3.03624,
+    "traction_vis_N": 10959.080617000001,
+    "fleche": 0.42818804980694986
+   },
+   "marges": {
+    "plastification": 1.6121966006859252,
+    "flambement": 1.0120799999999999,
+    "vis": 3.0484309010535675
+   },
+   "decomposition": {
+    "l_eq_mm": 1851.934417773841,
+    "eta": 0.22360106599347393,
+    "part_flexion": 0.22387137833581558
+   },
+   "limite": "le flambement",
+   "point_critique": {
+    "face": "L.dessus",
+    "texte": "146 MPa sur L.dessus en (x 350, y 3, z 190), à 0 mm d'un bord libre, à 5 mm du bord de l'appui ; à 30 mm du centre de la charge, dans la zone d'introduction de l'effort ; au-delà de 50 mm, 111 MPa au plus (V.diag en x 275, y 6, z 172) : la zone d'appui fixe l'effort tenu (contrainte x1.31)"
+   },
+   "faces": [
+    {
+     "id": "L.dos",
+     "t": 5.0,
+     "part_masse": 0.12637567574248093,
+     "part_energie": 0.07125347767004385,
+     "l_eq_mm": 107.28283493992922,
+     "eta": 0.10249791167263975,
+     "part_flexion": 0.4492462328596581,
+     "part_peu_utile": 0.754181771518508
+    },
+    {
+     "id": "L.dessus",
+     "t": 5.0,
+     "part_masse": 0.43379260737854586,
+     "part_energie": 0.417884039465786,
+     "l_eq_mm": 826.4383101636972,
+     "eta": 0.23002580598756533,
+     "part_flexion": 0.34011757353023575,
+     "part_peu_utile": 0.08689733291270227
+    },
+    {
+     "id": "L.retour_dos_g",
+     "t": 5.0,
+     "part_masse": 0.02845662710870209,
+     "part_energie": 0.0061917195363695565,
+     "l_eq_mm": 24.39545563639426,
+     "eta": 0.10350796672765035,
+     "part_flexion": 0.12505211546426204,
+     "part_peu_utile": 0.7817303312044336
+    },
+    {
+     "id": "L.retour_dos_d",
+     "t": 5.0,
+     "part_masse": 0.02845662710870209,
+     "part_energie": 0.006493386299315254,
+     "l_eq_mm": 25.202326853250575,
+     "eta": 0.10693145675434479,
+     "part_flexion": 0.14350750635679468,
+     "part_peu_utile": 0.760839009289782
+    },
+    {
+     "id": "V.jambe",
+     "t": 5.0,
+     "part_masse": 0.09043644002350773,
+     "part_energie": 0.01169901171452264,
+     "l_eq_mm": 63.29491463964337,
+     "eta": 0.08450329176047951,
+     "part_flexion": 0.035107311066905574,
+     "part_peu_utile": 0.9807006764455884
+    },
+    {
+     "id": "V.diag",
+     "t": 5.0,
+     "part_masse": 0.2924820226380612,
+     "part_energie": 0.4864783653139627,
+     "l_eq_mm": 805.3205755409264,
+     "eta": 0.3324435294958099,
+     "part_flexion": 0.09787579806987963,
+     "part_peu_utile": 0.0
+    }
+   ],
+   "caracteristiques": {
+    "n_toles": 2,
+    "n_faces": 6,
+    "n_plis": 6,
+    "n_soudures": 1,
+    "n_doublages": 1,
+    "n_retours": 0,
+    "n_faces_inclinees": 1,
+    "n_evidements": 0,
+    "aire_evidements_cm2": 0.0,
+    "epaisseur_moy_mm": 5.0,
+    "aire_tole_cm2": 1114.8,
+    "part_flexion": 0.22387137833581558,
+    "part_masse_peu_utile": 0.26559305004490075
+   },
+   "convergence": {
+    "taille": 8.0,
+    "kg_par_kN": 0.2625083011533993
+   },
+   "optimisation": {
+    "essais": 168,
+    "faisables": 46,
+    "budget": [
+     32,
+     96,
+     40
+    ],
+    "taille": 8.0
+   },
+   "pistes": [
+    "Flambement proche de la limite (facteur 3.04) : il bloque toute réduction de masse. Faces qui flambent : V.diag. Un retour (pli) sur leur bord libre, une épaisseur plus forte ou une largeur plus faible entre appuis les raidissent.",
+    "La zone d'introduction de l'effort fixe l'effort tenu : 146 MPa à 30 mm du centre de la charge, contre 111 MPa au plus dans le reste de la pièce (x1.31). Étaler l'effort sous l'appui (doublage local, diagonale ou nervure dans l'axe de la charge, appui loin d'un bord libre) rapporte plus qu'alléger ailleurs ; un évidement loin de l'appui ne baisse le kg/kN que s'il ne fait pas monter cette zone. Cette contrainte dépend aussi de la modélisation de l'appui et de la maille.",
+    "L.dos : 75 % de sa surface travaille à moins de 20 % (13 % de la masse) : candidate pour un évidement (variable « evidement ») ou une tôle plus mince.",
+    "V.jambe : 98 % de sa surface travaille à moins de 20 % (9 % de la masse) : candidate pour un évidement (variable « evidement ») ou une tôle plus mince."
+   ]
+  },
+  {
+   "id": "F002",
+   "nom": "L + V, poche de 45 cm² au milieu du dessus (première ESO, 8 mm)",
+   "fichier": "concepts/apprentissage/sae51_L_V_poche_eso.json",
+   "valeurs": {
+    "t_L": 5.0,
+    "t_V": 5.0,
+    "ecart_vis": 60,
+    "u_b": 0.3342474550285505,
+    "z_dessus": 192.31397284089252,
+    "u_bas": 0.5066533167104433,
+    "u_pied": 0.37412350273788325,
+    "u_jambe": 0.6513008663103119,
+    "x_diag": 313.0981758081457,
+    "u_bv": 0.5860626053978686,
+    "h_ret_cotes": 0.0,
+    "h_ret_bout": 0.0,
+    "h_ret_diag": 0.0,
+    "h_ret_dos": 33.25
+   },
+   "origine": "eso",
+   "parent": "F001",
+   "experience": null,
+   "principe": "Une tôle pliée en L (dos vissé sur la grille, dessus qui reçoit l'appui) et une tôle pliée en V dessous : une jambe doublée contre le dos, une diagonale qui remonte souder sous le dessus. Dos, dessus et diagonale forment un triangle. Figé aux valeurs optimisées de sae51_L_V.json avec une poche de 45 cm² au milieu du dessus tirée de la première carte ESO (maille 8 mm, avant l'exclusion des extrémit",
+   "date": "2026-11-10 01:08",
+   "faisable": true,
+   "erreurs": [],
+   "taille": 6.0,
+   "mesures": {
+    "masse_kg": 4.1985648127791,
+    "effort_tenu_N": 15322.356827895052,
+    "kg_par_kN": 0.27401560085948534,
+    "sigma_utile": 150.4566187757098,
+    "flambement": 3.033426,
+    "traction_vis_N": 11113.747159,
+    "fleche": 0.4449677576
+   },
+   "marges": {
+    "plastification": 1.561912010998476,
+    "flambement": 1.011142,
+    "vis": 3.006006841980919
+   },
+   "decomposition": {
+    "l_eq_mm": 1847.0446154409888,
+    "eta": 0.22516655886206008,
+    "part_flexion": 0.2202013198134405
+   },
+   "limite": "le flambement",
+   "point_critique": {
+    "face": "L.dessus",
+    "texte": "150 MPa sur L.dessus en (x 308, y 1, z 187), sous l'appui, à 13 mm de son bord, à 5 mm de la soudure avec V.diag ; à 13 mm du centre de la charge ; au-delà de 50 mm, 144 MPa au plus (L.dessus en x 125, y -31, z 195), presque autant : la zone d'appui ne décide pas seule"
+   },
+   "faces": [
+    {
+     "id": "L.dos",
+     "t": 5.0,
+     "part_masse": 0.1317001589103805,
+     "part_energie": 0.06996347797903751,
+     "l_eq_mm": 105.6565064087106,
+     "eta": 0.0977956608436612,
+     "part_flexion": 0.46446654727168935,
+     "part_peu_utile": 0.7878222308441979
+    },
+    {
+     "id": "L.dessus",
+     "t": 5.0,
+     "part_masse": 0.4099370535795973,
+     "part_energie": 0.4345036420888471,
+     "l_eq_mm": 822.6492541019746,
+     "eta": 0.24462856699954746,
+     "part_flexion": 0.3134416208931254,
+     "part_peu_utile": 0.04371698659108805
+    },
+    {
+     "id": "L.retour_dos_g",
+     "t": 5.0,
+     "part_masse": 0.02965556694554403,
+     "part_energie": 0.0064801099437727175,
+     "l_eq_mm": 25.36165389776578,
+     "eta": 0.10425117984969387,
+     "part_flexion": 0.15652238572018667,
+     "part_peu_utile": 0.7672717954922929
+    },
+    {
+     "id": "L.retour_dos_d",
+     "t": 5.0,
+     "part_masse": 0.029655566945544026,
+     "part_energie": 0.006086159804334438,
+     "l_eq_mm": 24.622009377070434,
+     "eta": 0.10121080975937244,
+     "part_flexion": 0.16352716951281815,
+     "part_peu_utile": 0.7618212113397639
+    },
+    {
+     "id": "V.jambe",
+     "t": 5.0,
+     "part_masse": 0.09424672471508991,
+     "part_energie": 0.011097513578649545,
+     "l_eq_mm": 62.62827609464495,
+     "eta": 0.08100537360474627,
+     "part_flexion": 0.03307782370267065,
+     "part_peu_utile": 0.9805684627092178
+    },
+    {
+     "id": "V.diag",
+     "t": 5.0,
+     "part_masse": 0.30480492890384425,
+     "part_energie": 0.47186909660535864,
+     "l_eq_mm": 806.1269155608225,
+     "eta": 0.3223970614546546,
+     "part_flexion": 0.10413371611485801,
+     "part_peu_utile": 0.0
+    }
+   ],
+   "caracteristiques": {
+    "n_toles": 2,
+    "n_faces": 6,
+    "n_plis": 6,
+    "n_soudures": 1,
+    "n_doublages": 1,
+    "n_retours": 0,
+    "n_faces_inclinees": 1,
+    "n_evidements": 1,
+    "aire_evidements_cm2": 45.1,
+    "epaisseur_moy_mm": 5.0,
+    "aire_tole_cm2": 1069.7,
+    "part_flexion": 0.2202013198134405,
+    "part_masse_peu_utile": 0.25943901166916655
+   },
+   "convergence": {
+    "taille": 8.0,
+    "kg_par_kN": 0.27826582992144255
+   },
+   "optimisation": {},
+   "pistes": [
+    "Flambement proche de la limite (facteur 3.03) : il bloque toute réduction de masse. Faces qui flambent : V.diag. Un retour (pli) sur leur bord libre, une épaisseur plus forte ou une largeur plus faible entre appuis les raidissent.",
+    "L.dos : 79 % de sa surface travaille à moins de 20 % (13 % de la masse) : candidate pour un évidement (variable « evidement ») ou une tôle plus mince.",
+    "V.jambe : 98 % de sa surface travaille à moins de 20 % (9 % de la masse) : candidate pour un évidement (variable « evidement ») ou une tôle plus mince."
+   ]
+  },
+  {
+   "id": "F003",
+   "nom": "L + V, poche de 46 cm² au milieu du dessus (ESO 15 %, 6 mm)",
+   "fichier": "concepts/apprentissage/sae51_L_V_poche_eso15.json",
+   "valeurs": {
+    "t_L": 5.0,
+    "t_V": 5.0,
+    "ecart_vis": 60,
+    "u_b": 0.3342474550285505,
+    "z_dessus": 192.31397284089252,
+    "u_bas": 0.5066533167104433,
+    "u_pied": 0.37412350273788325,
+    "u_jambe": 0.6513008663103119,
+    "x_diag": 313.0981758081457,
+    "u_bv": 0.5860626053978686,
+    "h_ret_cotes": 0.0,
+    "h_ret_bout": 0.0,
+    "h_ret_diag": 0.0,
+    "h_ret_dos": 33.25
+   },
+   "origine": "eso",
+   "parent": "F001",
+   "experience": null,
+   "principe": "Une tôle pliée en L (dos vissé sur la grille, dessus qui reçoit l'appui) et une tôle pliée en V dessous : une jambe doublée contre le dos, une diagonale qui remonte souder sous le dessus. Dos, dessus et diagonale forment un triangle. Figé aux valeurs optimisées de sae51_L_V.json avec la poche tirée de la carte ESO à 6 mm (règle actuelle de la contrainte utile) quand 15 % de la matière évidable du ",
+   "date": "2026-11-10 01:09",
+   "faisable": true,
+   "erreurs": [],
+   "taille": 6.0,
+   "mesures": {
+    "masse_kg": 4.194905578896344,
+    "effort_tenu_N": 14724.828205867741,
+    "kg_par_kN": 0.2848865548886134,
+    "sigma_utile": 156.56209823088693,
+    "flambement": 3.023826,
+    "traction_vis_N": 10813.605302999998,
+    "fleche": 0.4616603463320463
+   },
+   "marges": {
+    "plastification": 1.501001855847884,
+    "flambement": 1.0079420000000001,
+    "vis": 3.0894414086605955
+   },
+   "decomposition": {
+    "l_eq_mm": 1867.4954426840911,
+    "eta": 0.21897240675031873,
+    "part_flexion": 0.24182750790130492
+   },
+   "limite": "le flambement",
+   "point_critique": {
+    "face": "L.dessus",
+    "texte": "157 MPa sur L.dessus en (x 308, y 1, z 187), sous l'appui, à 13 mm de son bord, à 5 mm de la soudure avec V.diag ; à 13 mm du centre de la charge, dans la zone d'introduction de l'effort ; au-delà de 50 mm, 140 MPa au plus (L.dessus en x 116, y -31, z 190) : la zone d'appui fixe l'effort tenu (contrainte x1.11)"
+   },
+   "faces": [
+    {
+     "id": "L.dos",
+     "t": 5.0,
+     "part_masse": 0.13181442060049348,
+     "part_energie": 0.06568795539087179,
+     "l_eq_mm": 104.44533066688082,
+     "eta": 0.09290456048692673,
+     "part_flexion": 0.4556068956460122,
+     "part_peu_utile": 0.80003613706538
+    },
+    {
+     "id": "L.dessus",
+     "t": 5.0,
+     "part_masse": 0.4094251210953175,
+     "part_energie": 0.444509800690191,
+     "l_eq_mm": 839.378341708959,
+     "eta": 0.24037771461106183,
+     "part_flexion": 0.34413678034705136,
+     "part_peu_utile": 0.04469315082118468
+    },
+    {
+     "id": "L.retour_dos_g",
+     "t": 5.0,
+     "part_masse": 0.02968129580744131,
+     "part_energie": 0.0060183559586193345,
+     "l_eq_mm": 24.896006146225623,
+     "eta": 0.09834623859137463,
+     "part_flexion": 0.14360260122510118,
+     "part_peu_utile": 0.7793258772606739
+    },
+    {
+     "id": "L.retour_dos_d",
+     "t": 5.0,
+     "part_masse": 0.02968129580744131,
+     "part_energie": 0.006031244365454102,
+     "l_eq_mm": 25.02846338170406,
+     "eta": 0.09886948199061726,
+     "part_flexion": 0.15515363162188386,
+     "part_peu_utile": 0.7618451817813504
+    },
+    {
+     "id": "V.jambe",
+     "t": 5.0,
+     "part_masse": 0.0943284921946636,
+     "part_energie": 0.010786440045800741,
+     "l_eq_mm": 62.79458754020513,
+     "eta": 0.07805311657478131,
+     "part_flexion": 0.03560011859906528,
+     "part_peu_utile": 0.9774353255956852
+    },
+    {
+     "id": "V.diag",
+     "t": 5.0,
+     "part_masse": 0.3050693744946428,
+     "part_energie": 0.46696620354906304,
+     "l_eq_mm": 810.9527132401167,
+     "eta": 0.31167922013210425,
+     "part_flexion": 0.12151507070253008,
+     "part_peu_utile": 0.0
+    }
+   ],
+   "caracteristiques": {
+    "n_toles": 2,
+    "n_faces": 6,
+    "n_plis": 6,
+    "n_soudures": 1,
+    "n_doublages": 1,
+    "n_retours": 0,
+    "n_faces_inclinees": 1,
+    "n_evidements": 1,
+    "aire_evidements_cm2": 46.0,
+    "epaisseur_moy_mm": 5.0,
+    "aire_tole_cm2": 1068.8,
+    "part_flexion": 0.24182750790130492,
+    "part_masse_peu_utile": 0.2616987531283599
+   },
+   "convergence": {
+    "taille": 8.0,
+    "kg_par_kN": 0.26328203029622055
+   },
+   "optimisation": {},
+   "pistes": [
+    "Flambement proche de la limite (facteur 3.02) : il bloque toute réduction de masse. Faces qui flambent : V.diag. Un retour (pli) sur leur bord libre, une épaisseur plus forte ou une largeur plus faible entre appuis les raidissent.",
+    "L.dos : 80 % de sa surface travaille à moins de 20 % (13 % de la masse) : candidate pour un évidement (variable « evidement ») ou une tôle plus mince.",
+    "V.jambe : 98 % de sa surface travaille à moins de 20 % (9 % de la masse) : candidate pour un évidement (variable « evidement ») ou une tôle plus mince."
+   ]
+  },
+  {
+   "id": "F004",
+   "nom": "L + V, poche de 99 cm² dans le dessus (ESO 30 %, 6 mm)",
+   "fichier": "concepts/apprentissage/sae51_L_V_poche_eso30.json",
+   "valeurs": {
+    "t_L": 5.0,
+    "t_V": 5.0,
+    "ecart_vis": 60,
+    "u_b": 0.3342474550285505,
+    "z_dessus": 192.31397284089252,
+    "u_bas": 0.5066533167104433,
+    "u_pied": 0.37412350273788325,
+    "u_jambe": 0.6513008663103119,
+    "x_diag": 313.0981758081457,
+    "u_bv": 0.5860626053978686,
+    "h_ret_cotes": 0.0,
+    "h_ret_bout": 0.0,
+    "h_ret_diag": 0.0,
+    "h_ret_dos": 33.25
+   },
+   "origine": "eso",
+   "parent": "F001",
+   "experience": null,
+   "principe": "Une tôle pliée en L (dos vissé sur la grille, dessus qui reçoit l'appui) et une tôle pliée en V dessous : une jambe doublée contre le dos, une diagonale qui remonte souder sous le dessus. Dos, dessus et diagonale forment un triangle. Figé aux valeurs optimisées de sae51_L_V.json avec la poche tirée de la carte ESO à 6 mm quand 30 % de la matière évidable du dessus est retirée : 99 cm², coins arron",
+   "date": "2026-11-10 01:10",
+   "faisable": false,
+   "erreurs": [],
+   "taille": 6.0,
+   "mesures": {
+    "masse_kg": 3.9873829648610046,
+    "effort_tenu_N": 9325.713657925571,
+    "kg_par_kN": 0.4275686677847201,
+    "sigma_utile": 247.20360120008297,
+    "flambement": 3.016497,
+    "traction_vis_N": 10959.97742,
+    "fleche": 0.5137025616326532
+   },
+   "marges": {
+    "plastification": 0.9506334004001602,
+    "flambement": 1.0054990000000001,
+    "vis": 3.0481814624030497
+   },
+   "decomposition": {
+    "l_eq_mm": 1895.4524933473053,
+    "eta": 0.14808423489293288,
+    "part_flexion": 0.22731995427049292
+   },
+   "limite": "la plastification (contrainte au point critique), NON TENU (marge x0.95)",
+   "point_critique": {
+    "face": "L.dessus",
+    "texte": "247 MPa sur L.dessus en (x 120, y -47, z 195), à 0 mm du bord de l'évidement 1 ; à 205 mm du centre de la charge, hors de la zone d'appui"
+   },
+   "faces": [
+    {
+     "id": "L.dos",
+     "t": 5.0,
+     "part_masse": 0.13867630522383503,
+     "part_energie": 0.05735072984833255,
+     "l_eq_mm": 100.22286599760409,
+     "eta": 0.05646075244182141,
+     "part_flexion": 0.456749926000044,
+     "part_peu_utile": 0.88270465510638
+    },
+    {
+     "id": "L.dessus",
+     "t": 5.0,
+     "part_masse": 0.3786814690576537,
+     "part_energie": 0.49478538672250977,
+     "l_eq_mm": 866.7002754869128,
+     "eta": 0.1788039000517177,
+     "part_flexion": 0.28779690850864686,
+     "part_peu_utile": 0.1157965212991031
+    },
+    {
+     "id": "L.retour_dos_g",
+     "t": 5.0,
+     "part_masse": 0.03122641982630129,
+     "part_energie": 0.006523758290214478,
+     "l_eq_mm": 27.249565840992545,
+     "eta": 0.06817411342792257,
+     "part_flexion": 0.1305345409212041,
+     "part_peu_utile": 0.8764088118108869
+    },
+    {
+     "id": "L.retour_dos_d",
+     "t": 5.0,
+     "part_masse": 0.03122641982630129,
+     "part_energie": 0.006590384020394114,
+     "l_eq_mm": 27.187366028516372,
+     "eta": 0.06801849931297888,
+     "part_flexion": 0.14074042469354192,
+     "part_peu_utile": 0.8756787837100682
+    },
+    {
+     "id": "V.jambe",
+     "t": 5.0,
+     "part_masse": 0.09923896577702923,
+     "part_energie": 0.009465081109545734,
+     "l_eq_mm": 61.4707853698864,
+     "eta": 0.04839145030457678,
+     "part_flexion": 0.027065780095219,
+     "part_peu_utile": 1.0
+    },
+    {
+     "id": "V.diag",
+     "t": 5.0,
+     "part_masse": 0.32095042028887943,
+     "part_energie": 0.42528466000900317,
+     "l_eq_mm": 812.6216346233933,
+     "eta": 0.19780284680448001,
+     "part_flexion": 0.13330370048548779,
+     "part_peu_utile": 0.028046425986202835
+    }
+   ],
+   "caracteristiques": {
+    "n_toles": 2,
+    "n_faces": 6,
+    "n_plis": 6,
+    "n_soudures": 1,
+    "n_doublages": 1,
+    "n_retours": 0,
+    "n_faces_inclinees": 1,
+    "n_evidements": 1,
+    "aire_evidements_cm2": 98.9,
+    "epaisseur_moy_mm": 5.0,
+    "aire_tole_cm2": 1015.9,
+    "part_flexion": 0.22731995427049292,
+    "part_masse_peu_utile": 0.3292121177864367
+   },
+   "convergence": {
+    "taille": 8.0,
+    "kg_par_kN": 0.4280067285369249
+   },
+   "optimisation": {},
+   "pistes": [
+    "Flambement proche de la limite (facteur 3.02) : il bloque toute réduction de masse. Faces qui flambent : V.diag. Un retour (pli) sur leur bord libre, une épaisseur plus forte ou une largeur plus faible entre appuis les raidissent.",
+    "L.dos : 88 % de sa surface travaille à moins de 20 % (14 % de la masse) : candidate pour un évidement (variable « evidement ») ou une tôle plus mince.",
+    "V.jambe : 100 % de sa surface travaille à moins de 20 % (10 % de la masse) : candidate pour un évidement (variable « evidement ») ou une tôle plus mince."
+   ]
+  }
+ ],
+ "lecons": [
+  {
+   "id": "L001",
+   "enonce": "Une équerre en U simple (dos, dessus, deux ailes) plafonne vers 4 à 5 kN.",
+   "mecanisme": "Le dessus n'est porté que par ses bords : il plie localement sous l'appui, loin de tout raidisseur. Chemin d'effort en flexion, L_eq grande et eta faible.",
+   "portee": "Pièces où l'effort arrive au milieu d'une tôle portée seulement par ses bords.",
+   "source": "humain (phase 3)",
+   "statut": "observee",
+   "preuves": [
+    {
+     "type": "observation",
+     "fiches": [],
+     "grandeur": "",
+     "valeurs": [],
+     "attendu": "",
+     "verdict": "conforme",
+     "note": "constat des phases 2 à 4, fait avant le carnet (chiffres non relus dans une fiche) : optimisation de l'équerre en U de la phase 3",
+     "date": "2026-11-10 01:10"
+    }
+   ],
+   "creee": "2026-11-10 01:10",
+   "maj": "2026-11-10 01:10"
+  },
+  {
+   "id": "L002",
+   "enonce": "Soutenir le dessus près de l'appui par une diagonale (L + V) fait passer l'effort en membrane : le L + V tient plus de trois fois l'effort de l'équerre en U.",
+   "mecanisme": "La diagonale descend l'effort en compression vers le bas du dos ; le dessus travaille en traction vers le haut du dos. Triangle dos, dessus, diagonale : chemin d'effort court, peu de flexion.",
+   "portee": "Effort en porte-à-faux, fixation sur une face verticale.",
+   "source": "humain (phase 4)",
+   "statut": "observee",
+   "preuves": [
+    {
+     "type": "observation",
+     "fiches": [
+      "F001"
+     ],
+     "grandeur": "",
+     "valeurs": [],
+     "attendu": "",
+     "verdict": "conforme",
+     "note": "fiche F001 : 15,8 kN tenus pour 4,38 kg, 22 % de l'énergie en flexion ; constat des phases 2 à 4, fait avant le carnet (chiffres non relus dans une fiche) pour l'équerre en U",
+     "date": "2026-11-10 01:10"
+    }
+   ],
+   "creee": "2026-11-10 01:10",
+   "maj": "2026-11-10 01:10"
+  },
+  {
+   "id": "L003",
+   "enonce": "Les contraintes se concentrent aux extrémités des lignes de soudure en T et aux jonctions en un seul point : préférer des liaisons sur toute la largeur et des retours qui se rejoignent bord à bord.",
+   "mecanisme": "Une liaison qui s'arrête au milieu d'une tôle concentre l'effort à son extrémité.",
+   "portee": "Soudures en T, retours, doublages.",
+   "source": "humain (phase 4)",
+   "statut": "hypothese",
+   "preuves": [
+    {
+     "type": "observation",
+     "fiches": [],
+     "grandeur": "",
+     "valeurs": [],
+     "attendu": "",
+     "verdict": "",
+     "note": "constat fait avant l'exclusion des extrémités de jonction : le pic lu à ces points dépendait surtout du maillage (135 à 183 MPa de 8 à 4 mm au bout du retour du dos de L + V). Gabarit exclut maintenant une boule de 10 mm autour de ces points et lit la contrainte à son bord : l'effet réel reste à mesurer par une expérience",
+     "date": "2026-11-10 01:10"
+    }
+   ],
+   "creee": "2026-11-10 01:10",
+   "maj": "2026-11-10 01:10"
+  },
+  {
+   "id": "L004",
+   "enonce": "La bande du dos entre le pli et les vis du haut est fortement sollicitée (le dessus tire dessus) ; écarter les vis et doubler le dos aident.",
+   "mecanisme": "La traction du dessus passe par le pli dans le dos jusqu'aux vis du haut.",
+   "portee": "Concepts en L vissés par le dos.",
+   "source": "humain (phase 4)",
+   "statut": "hypothese",
+   "preuves": [
+    {
+     "type": "observation",
+     "fiches": [
+      "F001"
+     ],
+     "grandeur": "",
+     "valeurs": [],
+     "attendu": "",
+     "verdict": "contraire",
+     "note": "constat fait avant l'exclusion des extrémités de jonction : le pic lu à ces points dépendait surtout du maillage (135 à 183 MPa de 8 à 4 mm au bout du retour du dos de L + V). Avec la règle actuelle (fiche F001 à 6 mm), le dos culmine à 96 MPa près du pli contre 146 MPa au point critique, et 75 % de sa surface travaille sous 20 % de la contrainte utile : cette bande n'est pas ce qui limite L + V",
+     "date": "2026-11-10 01:10"
+    }
+   ],
+   "creee": "2026-11-10 01:10",
+   "maj": "2026-11-10 01:10"
+  },
+  {
+   "id": "L005",
+   "enonce": "À l'optimum de L + V, la contrainte limite moins que le flambement de la diagonale (premier mode : V.diag 100 %) : marge x1,6 en plastification, x1,01 au flambement. L'optimiseur a donc allégé jusqu'à ce que la diagonale soit sur le point de flamber.",
+   "mecanisme": "Diagonale de 5 mm comprimée, bords libres, sans retour (h_ret_diag = 0 à l'optimum).",
+   "portee": "L + V et concepts dont une tôle comprimée porte l'effort.",
+   "source": "Gabarit (fiche F001)",
+   "statut": "observee",
+   "preuves": [
+    {
+     "type": "observation",
+     "fiches": [
+      "F001"
+     ],
+     "grandeur": "",
+     "valeurs": [],
+     "attendu": "",
+     "verdict": "conforme",
+     "note": "fiche F001 à 6 mm : marges plastification 1,61, flambement 1,01, vis 3,05 ; mode V.diag 100 %, L.dessus 18 %",
+     "date": "2026-11-10 01:10"
+    }
+   ],
+   "creee": "2026-11-10 01:10",
+   "maj": "2026-11-10 01:10"
+  },
+  {
+   "id": "L006",
+   "enonce": "Dans L + V, la jambe doublée contre le dos et le dos lui-même travaillent peu : 98 % et 75 % de leur surface sous 20 % de la contrainte utile, 22 % de la masse à eux deux.",
+   "mecanisme": "Le dos ne transmet l'effort qu'entre le pli du dessus, les vis et le pied de la jambe ; la jambe doublée double une matière déjà peu chargée.",
+   "portee": "L + V ; à vérifier sur les concepts à doublage.",
+   "source": "Gabarit (fiche F001)",
+   "statut": "observee",
+   "preuves": [
+    {
+     "type": "observation",
+     "fiches": [
+      "F001"
+     ],
+     "grandeur": "",
+     "valeurs": [],
+     "attendu": "",
+     "verdict": "conforme",
+     "note": "fiche F001 à 6 mm : V.jambe 9 % de la masse, eta 0,08 ; L.dos 13 % de la masse, eta 0,10. Les zones protégées (vis, plis, soudures, bande de bord) n'y laissent rien à évider pour l'ESO",
+     "date": "2026-11-10 01:10"
+    }
+   ],
+   "creee": "2026-11-10 01:10",
+   "maj": "2026-11-10 01:10"
+  },
+  {
+   "id": "L007",
+   "enonce": "Sur L + V, c'est la zone d'introduction de l'effort qui fixe l'effort tenu : 146 MPa au bout du dessus, à 30 mm de l'axe de la charge, et autant dans la diagonale juste sous l'appui, contre 111 MPa au plus au-delà de 50 mm de cet axe (96 MPa dans le dos). Étaler l'effort sous l'appui est le premier levier ; alléger loin de l'appui ne paie que si cela ne fait pas monter cette zone.",
+   "mecanisme": "L'effort de 9,8 kN entre par le disque Ø50 de l'adaptateur, à 5 mm du bout libre du dessus et juste au-dessus de la soudure de la diagonale : le dessus fléchit localement autour de l'appui et la diagonale reçoit l'effort sur une courte longueur de soudure.",
+   "portee": "Tous les concepts : chaque compte rendu dit à quelle distance de l'axe de la charge est le point critique et ce que vaut la contrainte au-delà de 50 mm.",
+   "source": "Gabarit (fiche F001)",
+   "statut": "observee",
+   "preuves": [
+    {
+     "type": "observation",
+     "fiches": [
+      "F001"
+     ],
+     "grandeur": "",
+     "valeurs": [],
+     "attendu": "",
+     "verdict": "conforme",
+     "note": "fiche F001 à 6 mm : point critique à 30 mm de l'axe de la charge, x1,31 sur la contrainte du reste de la pièce (diagnostic du compte rendu)",
+     "date": "2026-11-10 01:10"
+    },
+    {
+     "type": "observation",
+     "fiches": [
+      "F001"
+     ],
+     "grandeur": "",
+     "valeurs": [],
+     "attendu": "",
+     "verdict": "",
+     "note": "limite de la mesure : cette contrainte locale dépend de la modélisation de l'appui (efforts égaux sur les noeuds du disque Ø50, disque de 30 mm exclu) et de la maille. Optimum L + V : 138, 146 puis 161 MPa à 8, 6 puis 4 mm (0,2625, 0,2767 puis 0,3057 kg/kN), le pic passant à 4 mm sur la jonction de la diagonale sous l'appui. Les fiches se comparent donc à maille égale",
+     "date": "2026-11-10 01:10"
+    }
+   ],
+   "creee": "2026-11-10 01:10",
+   "maj": "2026-11-10 01:10"
+  },
+  {
+   "id": "L008",
+   "enonce": "Sur L + V à son optimum, une poche au milieu du dessus ne fait pas baisser le kg/kN : à 4 % de la masse, l'écart reste dans le bruit car la contrainte utile monte autant que la masse baisse ; à 9 % de la masse, la pièce ne tient plus.",
+   "mecanisme": "Le milieu du dessus, peu contraint, transmet pourtant la traction du dessus vers le dos ; la poche la renvoie dans les bandes latérales et vers la zone d'appui, qui fixe l'effort tenu.",
+   "portee": "Concepts limités par la zone d'appui ou par le flambement ; une poche ne paie que dans une tôle qui ne porte pas le chemin d'effort principal.",
+   "source": "Gabarit (fiches F002 à F004, optimisation topologique)",
+   "statut": "observee",
+   "preuves": [
+    {
+     "type": "comparaison",
+     "fiches": [
+      "F001",
+      "F002"
+     ],
+     "grandeur": "kg_par_kN",
+     "valeurs": [
+      0.2766645581530562,
+      0.27401560085948534
+     ],
+     "attendu": "<",
+     "verdict": "non_concluante",
+     "note": "poche de 45 cm² de la première ESO : écart sous le seuil, comme l'annonce la leçon",
+     "date": "2026-11-10 01:10"
+    },
+    {
+     "type": "comparaison",
+     "fiches": [
+      "F001",
+      "F003"
+     ],
+     "grandeur": "kg_par_kN",
+     "valeurs": [
+      0.2766645581530562,
+      0.2848865548886134
+     ],
+     "attendu": "<",
+     "verdict": "non_concluante",
+     "note": "poche de 46 cm² (ESO 15 % à 6 mm) : écart sous le seuil, comme l'annonce la leçon",
+     "date": "2026-11-10 01:10"
+    },
+    {
+     "type": "comparaison",
+     "fiches": [
+      "F001",
+      "F003"
+     ],
+     "grandeur": "sigma_utile",
+     "valeurs": [
+      145.76386025129744,
+      156.56209823088693
+     ],
+     "attendu": "<",
+     "verdict": "conforme",
+     "note": "la poche de 46 cm² fait monter la contrainte utile",
+     "date": "2026-11-10 01:10"
+    },
+    {
+     "type": "comparaison",
+     "fiches": [
+      "F001",
+      "F004"
+     ],
+     "grandeur": "kg_par_kN",
+     "valeurs": [
+      0.2766645581530562,
+      0.4275686677847201
+     ],
+     "attendu": "<",
+     "verdict": "conforme",
+     "note": "poche de 99 cm² (ESO 30 %) : pièce non tenue",
+     "date": "2026-11-10 01:10"
+    }
+   ],
+   "creee": "2026-11-10 01:10",
+   "maj": "2026-11-10 01:10"
+  }
+ ],
+ "experiences": [
+  {
+   "id": "E001",
+   "parent": "F001",
+   "modification": "Prolonger le haut de la diagonale par une patte pliée à plat sous le dessus, centrée sous l'axe de la charge (x = 320) et soudée contre lui (doublage), pour étaler l'effort de l'appui sur deux épaisseurs et sur toute la largeur de la diagonale.",
+   "grandeur": "kg_par_kN",
+   "sens": "baisse",
+   "seuil_pct": 3.0,
+   "lecon": "L007",
+   "source": "Gabarit (amorce)",
+   "statut": "a_faire",
+   "enfant": null,
+   "verdict": "",
+   "mesure": {},
+   "creee": "2026-11-10 01:10"
+  }
+ ],
+ "journal": [
+  {
+   "date": "2026-11-10 01:06",
+   "evenement": "fiche F001 : F001 L + V (idée d'Iwan) : 0.277 kg/kN = masse 4.38 kg / 15.8 kN tenus ; L_eq 1852 mm, eta 0.224, flexion 22 % ; flambement 3.04 ; limite : le flambement"
+  },
+  {
+   "date": "2026-11-10 01:08",
+   "evenement": "fiche F002 : F002 L + V, poche de 45 cm² au milieu du dessus (première ESO, 8 mm) : 0.274 kg/kN = masse 4.20 kg / 15.3 kN tenus ; L_eq 1847 mm, eta 0.225, flexion 22 % ; flambement 3.03 ; limite : le flambement"
+  },
+  {
+   "date": "2026-11-10 01:09",
+   "evenement": "fiche F003 : F003 L + V, poche de 46 cm² au milieu du dessus (ESO 15 %, 6 mm) : 0.285 kg/kN = masse 4.19 kg / 14.7 kN tenus ; L_eq 1867 mm, eta 0.219, flexion 24 % ; flambement 3.02 ; limite : le flambement"
+  },
+  {
+   "date": "2026-11-10 01:10",
+   "evenement": "fiche F004 : F004 L + V, poche de 99 cm² dans le dessus (ESO 30 %, 6 mm) (NON faisable) : 0.428 kg/kN = masse 3.99 kg / 9.3 kN tenus ; L_eq 1895 mm, eta 0.148, flexion 23 % ; flambement 3.02 ; limite : la plastification (contrainte au point critique), NON TENU (marge x0.95)"
+  },
+  {
+   "date": "2026-11-10 01:10",
+   "evenement": "leçon L001 (hypothese) : Une équerre en U simple (dos, dessus, deux ailes) plafonne vers 4 à 5 kN."
+  },
+  {
+   "date": "2026-11-10 01:10",
+   "evenement": "leçon L002 (hypothese) : Soutenir le dessus près de l'appui par une diagonale (L + V) fait passer l'effort en membrane : le L + V tient plus de trois fois l'effort de l'équerre en U."
+  },
+  {
+   "date": "2026-11-10 01:10",
+   "evenement": "leçon L003 (hypothese) : Les contraintes se concentrent aux extrémités des lignes de soudure en T et aux jonctions en un seul point : préférer des liaisons sur toute la largeur et des retours qui se rejoignent bord à bord."
+  },
+  {
+   "date": "2026-11-10 01:10",
+   "evenement": "leçon L004 (hypothese) : La bande du dos entre le pli et les vis du haut est fortement sollicitée (le dessus tire dessus) ; écarter les vis et doubler le dos aident."
+  },
+  {
+   "date": "2026-11-10 01:10",
+   "evenement": "leçon L005 (hypothese) : À l'optimum de L + V, la contrainte limite moins que le flambement de la diagonale (premier mode : V.diag 100 %) : marge x1,6 en plastification, x1,01 au flambement. L'optimiseur a donc allégé jusqu'à ce que la diagonale soit sur le point de flamber."
+  },
+  {
+   "date": "2026-11-10 01:10",
+   "evenement": "leçon L006 (hypothese) : Dans L + V, la jambe doublée contre le dos et le dos lui-même travaillent peu : 98 % et 75 % de leur surface sous 20 % de la contrainte utile, 22 % de la masse à eux deux."
+  },
+  {
+   "date": "2026-11-10 01:10",
+   "evenement": "leçon L007 (hypothese) : Sur L + V, c'est la zone d'introduction de l'effort qui fixe l'effort tenu : 146 MPa au bout du dessus, à 30 mm de l'axe de la charge, et autant dans la diagonale juste sous l'appui, contre 111 MPa au plus au-delà de 50 mm de cet axe (96 MPa dans le dos). Étaler l'effort sous l'appui est le premier levier ; alléger loin de l'appui ne paie que si cela ne fait pas monter cette zone."
+  },
+  {
+   "date": "2026-11-10 01:10",
+   "evenement": "leçon L008 (hypothese) : Sur L + V à son optimum, une poche au milieu du dessus ne fait pas baisser le kg/kN : à 4 % de la masse, l'écart reste dans le bruit car la contrainte utile monte autant que la masse baisse ; à 9 % de la masse, la pièce ne tient plus."
+  },
+  {
+   "date": "2026-11-10 01:10",
+   "evenement": "expérience E001 prévue : E001 (depuis F001, leçon L007) : Prolonger le haut de la diagonale par une patte pliée à plat sous le dessus, centrée sous l'axe de la charge (x = 320) et soudée contre lui (doublage), pour étaler l'effort de l'appui sur deux épaisseurs et sur toute la largeur de la diagonale ; prédiction : kg/kN en baisse d'au moins 3 %"
+  }
+ ]
+}
