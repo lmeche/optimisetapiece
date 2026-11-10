@@ -1,4 +1,4 @@
-"""Tâches longues (IA Concepteur, optimisation) lancées dans des processus séparés.
+"""Tâches longues (IA Concepteur, optimisation, apprentissage) lancées dans des processus séparés.
 
 Gmsh et CalculiX ne supportent pas les fils d'exécution : chaque tâche est un script Python lancé à
 part, dont la sortie est lue ligne à ligne par un fil de lecture et mise en file pour l'interface.
@@ -70,4 +70,5 @@ class Tache:
                 return sortie
 
 
-TACHES = {"concepteur": Tache("IA Concepteur"), "optimisation": Tache("Optimisation")}
+TACHES = {"concepteur": Tache("IA Concepteur"), "optimisation": Tache("Optimisation"),
+          "apprentissage": Tache("Apprentissage")}
