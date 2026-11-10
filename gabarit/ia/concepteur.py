@@ -58,8 +58,35 @@ OUTILS = [
 ]
 
 
-def prompt_systeme(cdc: CahierDesCharges, exemples: list[Path]) -> str:
+LECONS_INITIALES = """## Ce qu'on a appris sur ce cas
+- Une simple équerre en U (dos, dessus, deux ailes) plafonne vers 4 à 5 kN : le dessus plie localement sous \
+l'appui, loin de tout raidisseur.
+- Une diagonale (tôle en V sous le dessus) qui soutient le dessus près de l'appui fait passer l'effort en \
+membrane : le L + V tient plus de trois fois l'effort de l'équerre en U. À son optimum, c'est le flambement de \
+la diagonale qui limite.
+- Sur L + V, la contrainte qui fixe l'effort tenu est dans la zone d'introduction de l'effort (bout du dessus \
+près de l'appui, diagonale juste sous l'appui) : étaler l'effort sous l'appui est le premier levier.
+- Les extrémités de lignes de soudure en T et les jonctions en un seul point concentrent l'effort : préfère des \
+liaisons sur toute la largeur et des retours qui se rejoignent bord à bord."""
+
+
+def lecons_par_defaut() -> str:
+    """Section « Ce qu'on a appris » quand l'appelant n'en donne pas : celle du carnet d'apprentissage s'il existe
+    (version courte), sinon les constats des phases 2 à 4."""
+    from gabarit.apprentissage.carnet import CARNET_DEFAUT, Carnet
+
+    try:
+        c = Carnet.charger(CARNET_DEFAUT) if CARNET_DEFAUT.exists() else None
+    except (OSError, ValueError, KeyError, TypeError):  # carnet illisible : on n'empêche pas de concevoir
+        c = None
+    return c.pour_prompt(compact=True) if c is not None and (c.lecons or c.fiches) else LECONS_INITIALES
+
+
+def prompt_systeme(cdc: CahierDesCharges, exemples: list[Path], lecons: str | None = None) -> str:
+    """lecons : section « Ce qu'on a appris » tirée du carnet d'apprentissage (gabarit/apprentissage) ; à défaut,
+    celle du carnet par défaut s'il existe, sinon les constats des phases 2 à 4."""
     ex = "\n\n".join(f"Exemple ({p.name}) :\n```json\n{p.read_text(encoding='utf-8').strip()}\n```" for p in exemples)
+    appris = lecons.strip() if lecons and lecons.strip() else lecons_par_defaut()
     return f"""Tu es l'IA Concepteur de Gabarit, un outil qui cherche la pièce la plus performante pour un cahier \
 des charges. Ton rôle : proposer des formes générales de pièces mécano-soudées en tôle pliée, chacune décrite \
 comme un concept paramétré. Un optimiseur (plan d'expériences, optimisation bayésienne, affinage) fera ensuite \
@@ -82,7 +109,9 @@ plaqué sur le socle peut aussi s'y appuyer (contact unilatéral, pris en compte
 
 ## Ce que l'optimiseur minimise
 Masse / effort tenu (kg/kN), sous contraintes : pas de plastification à {cdc.chargements[0].force:g} N \
-(contrainte de Von Mises hors singularités au bord des vis et sous l'appui), facteur de flambement linéaire \
+(contrainte de Von Mises hors singularités : anneaux autour des vis, disque sous l'appui et boules de 10 mm autour \
+des extrémités de jonction, bout d'une soudure ou d'un retour qui s'arrête au milieu d'une autre tôle, où la valeur \
+calculée dépend du maillage et pas de la pièce ; la contrainte à 10 mm de ces points compte), facteur de flambement linéaire \
 ≥ 3, traction par vis ≤ résistance d'une M10 8.8 (33,4 kN).
 
 ## Format d'un concept
@@ -104,6 +133,10 @@ ni à |y| + t/2 > {cdc.encombrement.y_max:g}, rien derrière la face du socle, p
 {format_concepts.ANGLE_PLI_MIN:g}°, ailes ≥ aile minimale (0,7 × vé, vé standard le plus proche de 8 × t), \
 chaque soudure déclarée doit exister (arête commune d'au moins 10 mm, jonction en T ou doublage), assemblage \
 d'un seul tenant.
+- Champ facultatif « experience », quand on te demande de modifier un concept déjà mesuré : \
+{{"parent": "F002", "modification": "ce qui change, en une phrase", "grandeur": "kg_par_kN", "sens": "baisse", \
+"lecon": "L003"}}. C'est ta prédiction : Gabarit l'enregistre avant de calculer le concept, puis la vérifie \
+(grandeurs : kg_par_kN, masse_kg, effort_tenu_N, sigma_utile, flambement, l_eq_mm, eta, part_flexion...).
 
 ## Bonnes pratiques
 - Chaque cote est une variable ou une dérivée de variables : pas de valeur figée sans raison. Classe bien les \
@@ -116,15 +149,7 @@ d'effort, quelle rigidité, quel mode de ruine il vise.
 - Propose des concepts qui diffèrent par leur principe (chemin d'effort, nombre de tôles, type de \
 raidissement), pas seulement par leurs dimensions.
 
-## Ce qu'on a appris sur ce cas
-- Une simple équerre en U (dos, dessus, deux ailes) plafonne vers 4 à 5 kN : le dessus plie localement sous \
-l'appui, loin de tout raidisseur.
-- Une diagonale (tôle en V sous le dessus) qui soutient le dessus près de l'appui, avec des retours sur ses \
-bords, fait passer le facteur de flambement de 0,9 à plus de 30 et divise la contrainte par trois.
-- Les contraintes se concentrent aux extrémités des lignes de soudure en T et aux jonctions en un seul point : \
-préfère des liaisons sur toute la largeur et des retours qui se rejoignent bord à bord.
-- La bande du dos entre le pli et les vis du haut est fortement sollicitée (le dessus tire dessus) ; écarter \
-les vis et doubler le dos aident.
+{appris}
 
 {ex}
 
@@ -158,12 +183,13 @@ def concevoir(n_concepts: int = 3, chemin_cdc: str | Path = RACINE / "cahiers" /
               exemples: list[Path] | None = None, sortie: Path = RACINE / "concepts" / "ia",
               dossier_journal: Path | None = None, modele: str = MODELE, effort: str = EFFORT,
               consigne: str = "", calcul: bool = True, client: anthropic.Anthropic | None = None,
-              afficher=print) -> Session:
+              lecons: str | None = None, afficher=print) -> Session:
+    """lecons : section « Ce qu'on a appris » du prompt, tirée du carnet (Carnet.pour_prompt)."""
     cdc = CahierDesCharges.charger(chemin_cdc)
     exemples = exemples if exemples is not None else [RACINE / "concepts" / "sae51_L_V.json"]
     session = Session(dossier_journal or RACINE / "resultats" / "concepteur" / time.strftime("%Y%m%d_%H%M%S"))
     client = client or anthropic.Anthropic(max_retries=4)
-    systeme = [{"type": "text", "text": prompt_systeme(cdc, exemples), "cache_control": {"type": "ephemeral"}}]
+    systeme = [{"type": "text", "text": prompt_systeme(cdc, exemples, lecons), "cache_control": {"type": "ephemeral"}}]
     quoi = "un concept" if n_concepts == 1 else f"{n_concepts} concepts différents"
     demande = (f"Propose {quoi} pour ce cahier des charges, chacun vérifié puis enregistré."
                + (f"\n\nConsigne de l'utilisateur : {consigne}" if consigne else ""))

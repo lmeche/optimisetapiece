@@ -1,4 +1,5 @@
-"""Interface de Gabarit (application locale NiceGUI) : cahier des charges, concepts, optimisation, résultats.
+"""Interface de Gabarit (application locale NiceGUI) : cahier des charges, concepts, optimisation, résultats,
+apprentissage.
 
 Lancer depuis la racine du dépôt :  python -m gabarit.app   (ajouter --fenetre pour une fenêtre native)
 """
@@ -144,6 +145,7 @@ def page() -> None:
         t_concepts = ui.tab("concepts", "2. Concepts", icon="view_in_ar")
         t_optim = ui.tab("optim", "3. Optimisation", icon="tune")
         t_res = ui.tab("res", "4. Résultats", icon="insights")
+        t_app = ui.tab("app", "5. Apprentissage", icon="school")
     with ui.tab_panels(onglets, value=t_concepts).classes("w-full bg-transparent"):
         with ui.tab_panel(t_cdc):
             onglet_cdc(maj_entete)
@@ -153,6 +155,8 @@ def page() -> None:
             onglet_optimisation()
         with ui.tab_panel(t_res):
             onglet_resultats()
+        with ui.tab_panel(t_app):
+            onglet_apprentissage()
 
 
 # ---------- 1. cahier des charges ----------
@@ -681,6 +685,125 @@ def detail_resultat(dossier: Path) -> None:
             bouton_step.enable()
         ui.download(sortie, sortie.name)
     bouton_step.on_click(step)
+
+
+# ---------- 5. apprentissage ----------
+STATUTS_LECONS = {"confirmee": ("confirmée", "positive"), "nuancee": ("nuancée", "warning"),
+                  "observee": ("observée", "primary"), "hypothese": ("hypothèse", "grey"),
+                  "contredite": ("contredite", "negative")}
+
+
+def onglet_apprentissage() -> None:
+    from gabarit.apprentissage.carnet import CARNET_DEFAUT
+
+    tache = TACHES["apprentissage"]
+    cfg = lire_config()
+    with ui.row().classes("w-full no-wrap gap-4 items-start"):
+        with ui.card().classes("w-[34%]"):
+            ui.label("Boucle d'apprentissage").classes("text-lg font-semibold")
+            ui.label("Chaque cycle teste une expérience prévue, améliore le meilleur concept (une seule modification, "
+                     "prédiction écrite avant le calcul) ou explore un principe nouveau. Gabarit optimise et mesure, "
+                     "l'IA Analyste explique les écarts de kg/kN et range des leçons, vérifiées sur les mesures, dans "
+                     "le carnet que lira l'IA Concepteur au cycle suivant.").classes("text-sm text-gray-600")
+            moteur = ui.toggle({"claude": "Claude", "ouvert": "Modèle ouvert"}, value=cfg.get("ia_moteur", "claude"))
+            with ui.column().classes("w-full gap-0") as zone_ouvert:
+                url = ui.input("Adresse du serveur", value=cfg.get("ia_url", "http://localhost:11434/v1")).classes("w-full")
+                modele = ui.input("Modèle", value=cfg.get("ia_modele", "qwen3:8b")).classes("w-full")
+            zone_ouvert.bind_visibility_from(moteur, "value", backward=lambda v: v == "ouvert")
+            analyste = ui.select({"": "IA Analyste : la même que le concepteur", "claude": "IA Analyste : Claude",
+                                  "aucun": "Sans IA Analyste (verdicts seulement)"},
+                                 value=cfg.get("app_analyste", ""), label="Analyse").classes("w-full")
+            with ui.row():
+                cycles = ui.number("Cycles", value=cfg.get("app_cycles", 3), min=1, max=500, step=1).classes("w-24")
+                paralleles = ui.number("Calculs en parallèle", value=os.cpu_count() or 4, min=1, max=64,
+                                       step=1).classes("w-40")
+            ui.label("Un cycle prend de 5 à 20 minutes (conception, environ 64 essais d'optimisation, fiche à 6 mm "
+                     "avec flambement, analyse).").classes("text-xs text-gray-500")
+            with ui.row():
+                bouton = ui.button("Lancer", icon="school")
+                arret = ui.button("Arrêter", icon="stop", on_click=tache.arreter).props("flat color=negative")
+            journal = ui.log(max_lines=400).classes("w-full h-64 text-xs")
+            for ligne in tache.lignes[-200:]:
+                journal.push(ligne)
+        zone = ui.column().classes("grow gap-4")
+
+    def afficher_carnet():
+        zone.clear()
+        with zone:
+            carte_carnet(CARNET_DEFAUT)
+
+    def lancer():
+        args = ["exemples/apprendre.py", "--cycles", str(int(cycles.value or 1)), "--moteur", moteur.value,
+                "--paralleles", str(int(paralleles.value or 4)), "--cdc", str(ETAT["cdc"])]
+        if moteur.value == "ouvert":
+            args += ["--url", url.value.strip(), "--modele", modele.value.strip()]
+        if analyste.value:
+            args += ["--analyste", analyste.value]
+        if "claude" in (moteur.value, analyste.value or moteur.value) and not os.environ.get("ANTHROPIC_API_KEY"):
+            ui.notify("Renseigne d'abord la clé API (icône clé en haut à droite)", type="warning")
+            return
+        ecrire_config(ia_moteur=moteur.value, ia_url=url.value.strip(), ia_modele=modele.value.strip(),
+                      app_analyste=analyste.value, app_cycles=cycles.value)
+        journal.clear()
+        tache.lancer(args, titre="Apprentissage")
+    bouton.on_click(lancer)
+
+    def suivre():
+        for ligne in tache.nouvelles_lignes():
+            journal.push(ligne)
+            if ligne.startswith(("[verdict]", "[fin", "=== Cycle")):
+                afficher_carnet()
+        bouton.set_enabled(not tache.en_cours)
+        arret.set_visibility(tache.en_cours)
+    afficher_carnet()
+    ui.timer(1.0, suivre)
+
+
+def carte_carnet(chemin: Path) -> None:
+    from gabarit.apprentissage.carnet import Carnet, valeur
+
+    c = Carnet.charger(chemin)
+    with ui.card().classes("w-full"):
+        ui.label(f"Carnet : {len(c.fiches)} concepts mesurés, {len(c.lecons)} leçons, "
+                 f"{sum(e.statut == 'faite' for e in c.experiences)} expériences faites, {c.cycles} cycles").classes(
+            "text-lg font-semibold")
+        lignes = [{"id": f.id, "concept": f.nom, "faisable": "oui" if f.faisable else "non",
+                   "kg": fmt(valeur(f, "kg_par_kN"), 3), "masse": fmt(valeur(f, "masse_kg")),
+                   "tenu": fmt(valeur(f, "effort_tenu_N") / 1000, 1), "leq": fmt(valeur(f, "l_eq_mm"), 0),
+                   "eta": fmt(valeur(f, "eta"), 3), "flamb": fmt(valeur(f, "flambement")), "limite": f.limite or "-",
+                   "parent": f.parent or "-", "_tri": (not f.faisable, valeur(f, "kg_par_kN") if f.mesures else 9e9)}
+                  for f in c.fiches]
+        lignes.sort(key=lambda r: r.pop("_tri"))
+        ui.table(rows=lignes, row_key="id", columns=[
+            {"name": k, "label": lab, "field": k, "align": "left" if k in ("concept", "limite") else "right"}
+            for k, lab in (("id", "Fiche"), ("concept", "Concept"), ("faisable", "Faisable"), ("kg", "kg/kN"),
+                           ("masse", "Masse (kg)"), ("tenu", "Tenu (kN)"), ("leq", "L_eq (mm)"), ("eta", "eta"),
+                           ("flamb", "Flambement"), ("limite", "Limite"), ("parent", "Parent"))]).classes(
+            "w-full").props("flat dense wrap-cells")
+        ui.label("Mesures à 6 mm avec flambement. kg/kN = 1000 rho/Re x L_eq / eta : L_eq mesure le chemin d'effort, "
+                 "eta l'utilisation de la matière.").classes("text-xs text-gray-500")
+    with ui.card().classes("w-full"):
+        ui.label("Leçons").classes("font-semibold")
+        for x in sorted(c.lecons, key=lambda x: (list(STATUTS_LECONS).index(x.statut) if x.statut in STATUTS_LECONS
+                                                 else 9, x.id)):
+            nom, couleur = STATUTS_LECONS.get(x.statut, (x.statut, "grey"))
+            with ui.row().classes("w-full no-wrap items-start gap-2"):
+                ui.badge(nom, color=couleur).classes("mt-1")
+                with ui.column().classes("gap-0"):
+                    ui.label(f"{x.id} : {x.enonce}").classes("text-sm")
+                    ui.label(x.bilan_preuves() + (f" · {x.mecanisme}" if x.mecanisme else "")).classes(
+                        "text-xs text-gray-500")
+    if c.experiences:
+        with ui.card().classes("w-full"):
+            ui.label("Expériences").classes("font-semibold")
+            for e in reversed(c.experiences[-20:]):
+                ui.label(e.texte()).classes("text-sm")
+    stats = c.texte_statistiques()
+    if stats:
+        with ui.card().classes("w-full"):
+            ui.label("Statistiques").classes("font-semibold")
+            for t in stats:
+                ui.label(t).classes("text-sm")
 
 
 def lancer() -> None:

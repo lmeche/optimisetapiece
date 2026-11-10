@@ -9,14 +9,16 @@ Un concept est un fichier JSON :
         "z_dessus": {"type": "reel", "min": 100, "max": 200}, # réel borné (mm)
         "u_b": {"type": "fraction"},                          # réel dans [0, 1], à mettre à l'échelle dans "derivees"
         "ecart_vis": {"type": "choix", "valeurs": [0, 20, 40]},
-        "h_retour": {"type": "retour", "tole": "L", "max": 60} # 0 (pas de pli) ou [aile mini de la tôle, max]
+        "h_retour": {"type": "retour", "tole": "L", "max": 60}, # 0 (pas de pli) ou [aile mini de la tôle, max]
+        "m_dos": {"type": "evidement", "tole": "L", "max": 50}  # 0 (pas d'évidement) ou [bande mini, max]
       },
       "derivees": {"b": "44 + u_b * 100", ...},               # expressions évaluées dans l'ordre
       "toles": [
         {"nom": "L", "epaisseur": "t_L",
          "faces": {"dos": [[x, y, z], ...], "dessus": [...],  # polygones plans, surfaces moyennes
                    "option": {"points": [...], "si": "h_opt"}},  # face présente seulement si h_opt > 0
-         "retours": [{"face": "dessus", "arete": [1, 2], "hauteur": "h_retour", "direction": [0, 0, -1]}]}
+         "retours": [{"face": "dessus", "arete": [1, 2], "hauteur": "h_retour", "direction": [0, 0, -1]}],
+         "evidements": [{"face": "dos", "type": "decalage", "marge": "m_dos"}]}   # découpes d'allègement
       ],
       "soudures": [["V.diag", "L.dessus"]],                   # liaisons entre tôles, vérifiées (arête commune ou doublage)
       "fixation": {"face": "L.dos", "colonnes_vis": "ecart_vis"},
@@ -28,6 +30,7 @@ Règles de modélisation :
 - deux faces d'une même tôle qui partagent une arête forment un pli (angle et aile minimale vérifiés) ;
 - des tôles qui se touchent sont soudées (le maillage les relie) ;
 - deux faces coplanaires superposées forment un doublage : leurs épaisseurs s'additionnent.
+- un évidement (« decalage », « cercle » ou « polygone ») perce une face : voir le détail plus bas.
 Fonctions utilisables dans les expressions : min, max, abs, sqrt, sin, cos, tan, atan2, radians, degrees,
 aile_min(t) ; constantes : X_FACE (20), X_CHARGE (320), R_APPUI (25), Y_MAX (80), X_MAX (350).
 """
@@ -44,6 +47,7 @@ import gmsh
 import numpy as np
 
 from gabarit.cahier_des_charges import CahierDesCharges
+from gabarit.concepts import evidements as ev
 from gabarit.fem.calculix import Materiau, ModeleCoque
 
 X_FACE = 20.0
@@ -93,6 +97,9 @@ class Face:
     nom: str
     t: float
     points: np.ndarray  # (n, 3)
+    trous: list = field(default_factory=list)  # contours 3D des évidements, (k, 3) chacun
+    aire_trous: float = 0.0  # mm²
+    rayons_trous: list = field(default_factory=list)  # rayon de courbure minimal de chaque évidement (maillage)
 
     @property
     def id(self) -> str:
@@ -113,6 +120,9 @@ class Face:
             s += np.cross(p[i], p[(i + 1) % len(p)])
         return 0.5 * abs(np.dot(s, self.normale()))
 
+    def aire_nette(self) -> float:
+        return self.aire() - self.aire_trous
+
 
 @dataclass
 class Geometrie:
@@ -121,6 +131,8 @@ class Geometrie:
     appui: str
     colonnes_vis: tuple[float, ...]
     valeurs: dict = field(default_factory=dict)
+    erreurs_evidements: list[str] = field(default_factory=list)
+    notes_evidements: list[str] = field(default_factory=list)
 
     def face(self, ident: str) -> Face:
         return next(f for f in self.faces if f.id == ident)
@@ -157,18 +169,21 @@ class ConceptJSON:
         d = self.definition
         env = self._env()
         for nom, spec in d["variables"].items():
-            if spec["type"] == "retour":
+            if spec["type"] in ("retour", "evidement"):
                 continue
             env[nom] = float(self.valeurs[nom])
-        for nom, spec in d["variables"].items():  # les retours dépendent de l'épaisseur de leur tôle
-            if spec["type"] == "retour":
+        for nom, spec in d["variables"].items():  # retours et évidements dépendent de l'épaisseur de leur tôle
+            if spec["type"] in ("retour", "evidement"):
                 env[nom] = float(self.valeurs.get(nom, 0.0))
         for nom, expr in d.get("derivees", {}).items():
             env[nom] = evaluer_expr(expr, env)
         self.env = env
         faces = []
+        declarees: dict[str, set[str]] = {}
         for tole in d["toles"]:
             t = evaluer_expr(tole["epaisseur"], env)
+            declarees[tole["nom"]] = set(tole["faces"]) | {
+                r.get("nom", f"retour_{r['face']}_{k}") for k, r in enumerate(tole.get("retours", []))}
             locales = {}
             for nom, pts in tole["faces"].items():
                 if isinstance(pts, dict):  # face optionnelle : {"points": [...], "si": "expression > 0"}
@@ -192,7 +207,32 @@ class ConceptJSON:
         fix = d["fixation"]
         ecart = env[fix["colonnes_vis"]] if isinstance(fix.get("colonnes_vis"), str) else float(fix.get("colonnes_vis", 0))
         colonnes = (-ecart, ecart) if ecart > 0 else (0.0,)
-        return Geometrie(faces, fix["face"], d["appui"]["face"], colonnes, dict(self.valeurs))
+        g = Geometrie(faces, fix["face"], d["appui"]["face"], colonnes, dict(self.valeurs))
+        self._evidements(g, env, declarees)
+        return g
+
+    def _evidements(self, g: Geometrie, env: dict, declarees: dict[str, set[str]]) -> None:
+        """Perce les faces : les zones protégées dépendent de tout l'assemblage, d'où ce calcul en dernier."""
+        par_face: dict[str, list[dict]] = {}
+        for tole in self.definition["toles"]:
+            for k, s in enumerate(tole.get("evidements", []), start=1):
+                face = s.get("face")
+                if face not in declarees[tole["nom"]]:
+                    raise ValueError(f"évidement {k} de la tôle {tole['nom']} : face « {face} » inconnue")
+                if evaluer_expr(s.get("si", 1), env) <= 1e-9:
+                    continue
+                par_face.setdefault(f"{tole['nom']}.{face}", []).append(_evaluer_evidement(s, env))
+        if not par_face:
+            return
+        ctx = contexte_evidements(g, self.cdc, env["X_CHARGE"])
+        for f in g.faces:
+            if f.id not in par_face:
+                continue
+            r = ev.construire(f, par_face[f.id], ctx)
+            g.erreurs_evidements += r.erreurs
+            g.notes_evidements += r.notes
+            f.trous, f.aire_trous = r.trous, r.aire
+            f.rayons_trous = list(r.rayons)  # rayon des arrondis (les coins rentrants ne concentrent pas)
 
     # ---------- vérifications ----------
     def verifier(self, cdc: CahierDesCharges | None = None) -> list[str]:
@@ -200,7 +240,7 @@ class ConceptJSON:
         if self._erreur_construction:
             return [self._erreur_construction]
         g = self._geo
-        e = []
+        e = list(g.erreurs_evidements)
         toles = {f.tole for f in g.faces}
         # une face doublée contre la face de fixation est physiquement devant elle : son plan moyen est
         # celui du doublage, il peut donc être à moins d'une demi-épaisseur propre de la face du socle
@@ -259,7 +299,7 @@ class ConceptJSON:
             ids = [occ.addPoint(*p) for p in f.points]
             lignes = [occ.addLine(ids[i], ids[(i + 1) % len(ids)]) for i in range(len(ids))]
             entrees.append(occ.addPlaneSurface([occ.addCurveLoop(lignes)]))
-        _, carte = occ.fragment([(2, s) for s in entrees], [])
+        carte = _fragmenter(occ, entrees)
         occ.synchronize()
         surfaces, courbes = {}, {}
         for f, morceaux in zip(g.faces, carte):
@@ -319,16 +359,10 @@ class ConceptJSON:
         return e
 
     def trous_utilises(self, cdc: CahierDesCharges | None = None) -> list[tuple[float, float]]:
-        cdc = cdc or self.cdc
-        g = self._geo
-        fix = g.face(g.fixation)
-        poly = fix.points[:, 1:]
-        return [(h.y, h.z) for h in cdc.grille_fixation.trous
-                if any(abs(h.y - c) < 1e-6 for c in g.colonnes_vis)
-                and _dans_polygone(poly, (h.y, h.z)) and _distance_bords(poly, (h.y, h.z)) >= MARGE_TROU]
+        return _trous_utilises(self._geo, cdc or self.cdc)
 
     def masse(self, rho: float) -> float:
-        return sum(f.aire() * f.t for f in self._geo.faces) * rho * 1e-9
+        return sum(f.aire_nette() * f.t for f in self._geo.faces) * rho * 1e-9
 
     # ---------- maillage et modèle ----------
     def mailler(self, taille: float = 6.0):
@@ -337,38 +371,50 @@ class ConceptJSON:
         gmsh.option.setNumber("General.Terminal", 0)
         gmsh.model.add("concept")
         occ = gmsh.model.occ
-        entrees = []
-        for f in g.faces:
-            ids = [occ.addPoint(*p) for p in f.points]
-            lignes = [occ.addLine(ids[i], ids[(i + 1) % len(ids)]) for i in range(len(ids))]
-            entrees.append(occ.addPlaneSurface([occ.addCurveLoop(lignes)]))
-        _, carte = occ.fragment([(2, s) for s in entrees], [])
+        entrees = [surface_percee(occ, f) for f in g.faces]
+        carte = _fragmenter(occ, entrees)
         occ.synchronize()
         couverture: dict[int, list[Face]] = {}
         for f, morceaux in zip(g.faces, carte):
             for dim, tag in morceaux:
                 if dim == 2:
                     couverture.setdefault(tag, []).append(f)
-        gmsh.option.setNumber("Mesh.MeshSizeMax", 2 * taille)
-        gmsh.option.setNumber("Mesh.MeshSizeMin", 2 * taille)
+        if any(f.trous for f in g.faces):
+            _raffiner_trous(g, taille)
+        else:  # sans évidement : maillage uniforme, identique aux versions précédentes
+            gmsh.option.setNumber("Mesh.MeshSizeMax", 2 * taille)
+            gmsh.option.setNumber("Mesh.MeshSizeMin", 2 * taille)
         gmsh.option.setNumber("Mesh.RecombineAll", 1)
         gmsh.option.setNumber("Mesh.SubdivisionAlgorithm", 1)
         gmsh.option.setNumber("Mesh.SecondOrderIncomplete", 1)
-        gmsh.model.mesh.generate(2)
-        gmsh.model.mesh.setOrder(2)
-        tags, coords, _ = gmsh.model.mesh.getNodes()
-        noeuds = {int(t): tuple(coords[3 * k : 3 * k + 3]) for k, t in enumerate(tags)}
-        elements, epaisseurs = {}, {}
-        for tag, faces_couvrantes in couverture.items():
-            t = sum({f.tole: f.t for f in faces_couvrantes}.values())  # doublage : épaisseurs additionnées
-            types, etags, enodes = gmsh.model.mesh.getElements(2, tag)
-            for ty, et, en in zip(types, etags, enodes):
-                if ty != 16:
-                    raise RuntimeError(f"élément de type {ty} inattendu")
-                for k, e in enumerate(et):
-                    elements[int(e)] = [int(n) for n in en[8 * k : 8 * k + 8]]
-                    epaisseurs[int(e)] = t
+        for essai in range(2):
+            gmsh.model.mesh.generate(2)
+            gmsh.model.mesh.setOrder(2)
+            tags, coords, _ = gmsh.model.mesh.getNodes()
+            noeuds = {int(t): tuple(coords[3 * k : 3 * k + 3]) for k, t in enumerate(tags)}
+            elements, epaisseurs = {}, {}
+            self.faces_elements: dict[int, list[str]] = {}  # élément -> faces qu'il représente (2 pour un doublage)
+            for tag, faces_couvrantes in couverture.items():
+                t = sum({f.tole: f.t for f in faces_couvrantes}.values())  # doublage : épaisseurs additionnées
+                types, etags, enodes = gmsh.model.mesh.getElements(2, tag)
+                for ty, et, en in zip(types, etags, enodes):
+                    if ty != 16:
+                        raise RuntimeError(f"élément de type {ty} inattendu")
+                    for k, e in enumerate(et):
+                        elements[int(e)] = [int(n) for n in en[8 * k : 8 * k + 8]]
+                        epaisseurs[int(e)] = t
+                        self.faces_elements[int(e)] = [f.id for f in faces_couvrantes]
+            mauvais = elements_retournes(noeuds, elements)
+            if not mauvais:
+                break
+            if essai == 0:  # second essai : autre algorithme de surface et lissage renforcé
+                gmsh.model.mesh.clear()
+                gmsh.option.setNumber("Mesh.Algorithm", 8)
+                gmsh.option.setNumber("Mesh.Smoothing", 10)
         gmsh.finalize()
+        if mauvais:
+            faces = sorted({f for e in mauvais for f in self.faces_elements.get(e, [])})
+            raise RuntimeError(f"maillage invalide : {len(mauvais)} éléments retournés ({', '.join(faces)})")
         utilises = {n for c in elements.values() for n in c}
         return {n: c for n, c in noeuds.items() if n in utilises}, elements, epaisseurs
 
@@ -377,6 +423,7 @@ class ConceptJSON:
         noeuds, elements, epaisseurs = self.mailler(taille)
         if not _connexe(elements):
             raise RuntimeError("l'assemblage n'est pas d'un seul tenant (une tôle flotte)")
+        self._controler_soudures_maillees(elements)
         fix, ap = g.face(g.fixation), g.face(g.appui)
         xd, zc = fix.points[0, 0], ap.points[0, 2]
         mat = cdc.materiau
@@ -391,10 +438,49 @@ class ConceptJSON:
         dos = {n for n, (x, y, z) in noeuds.items() if abs(x - xd) < 1e-6} - encastres
         t_dos = max(epaisseurs[e] for e, c in elements.items() if all(abs(noeuds[n][0] - xd) < 1e-6 for n in c))
         info = {"trous": trous, "dos": dos, "x_charge": xc, "noeuds_charge": disque, "x_dos": xd,
-                "t_dos": t_dos, "z_charge": zc, "t_charge": ap.t}
+                "t_dos": t_dos, "z_charge": zc, "t_charge": ap.t,
+                "singuliers": self.points_singuliers(noeuds, elements)}
         modele = ModeleCoque(noeuds, elements, ap.t, materiau, encastres, {n: tuple(f) for n in disque},
                              epaisseurs=epaisseurs)
         return modele, info
+
+    def _controler_soudures_maillees(self, elements: dict[int, list[int]]) -> None:
+        """Chaque soudure déclarée doit partager des noeuds dans le maillage : sinon le calcul porterait sur
+        une pièce dont une liaison a disparu (mécanisme), sans autre symptôme qu'une flèche absurde."""
+        noeuds_face: dict[str, set[int]] = {}
+        for e, faces in self.faces_elements.items():
+            for f in faces:
+                noeuds_face.setdefault(f, set()).update(elements[e])
+        for a, b in self.definition.get("soudures", []):
+            if a in noeuds_face and b in noeuds_face and len(noeuds_face[a] & noeuds_face[b]) < 3:
+                raise RuntimeError(f"soudure {a}/{b} absente du maillage (aucun noeud commun)")
+
+    def points_singuliers(self, noeuds: dict, elements: dict[int, list[int]]) -> list[tuple[float, float, float]]:
+        """Extrémités de jonction : noeuds communs à plusieurs faces qui sont un sommet de l'une sans être un sommet
+        de l'autre (bout d'une soudure en T au milieu d'une tôle, bout d'un retour qui s'arrête le long du bord
+        d'une autre face, coin d'un doublage). En coques, la contrainte y est théoriquement infinie : elle croît
+        sans fin quand on affine le maillage (L + V : 135, 154, 162 puis 183 MPa à 8, 6, 5 et 4 mm au bout du
+        retour du dos), si bien qu'elle ne mesure rien. Les coins communs à toutes les faces (bout d'un pli sur
+        un bord libre, coin d'une boîte) ne sont pas singuliers."""
+        sommets = {f.id: f.points for f in self._geo.faces}
+        par_noeud: dict[int, set[str]] = {}
+        for e, fs in self.faces_elements.items():
+            if e in elements:
+                for n in elements[e][:4]:  # sommets des faces maillés : toujours des coins d'éléments
+                    par_noeud.setdefault(n, set()).update(fs)
+        points = []
+        for n, fs in sorted(par_noeud.items()):
+            if len(fs) < 2:
+                continue
+            q = np.asarray(noeuds[n], float)
+            est_sommet = [float(np.min(np.linalg.norm(sommets[f] - q, axis=1))) < 0.5 for f in fs]
+            if any(est_sommet) and not all(est_sommet):
+                points.append(tuple(round(float(x), 3) for x in q))
+        return points
+
+    def contexte_evidements(self) -> ev.Contexte:
+        """Ce qu'il faut savoir de l'assemblage pour placer une découpe (zones protégées)."""
+        return contexte_evidements(self._geo, self.cdc, self.env["X_CHARGE"])
 
     def faces_proches(self, p, tol: float = 1.0) -> list[str]:
         """Faces qui passent par le point p (à une demi-épaisseur près) : sert à nommer une zone du modèle."""
@@ -417,6 +503,148 @@ class ConceptJSON:
 
     def geometrie(self) -> Geometrie:
         return self._geo
+
+
+# ---------- évidements ----------
+TAILLE_TROU_RELATIVE = 1 / 3  # taille de maille au bord d'un évidement / rayon de courbure du bord
+TAILLE_TROU_MIN = 1.5  # mm
+
+
+def _evaluer_evidement(s: dict, env: dict) -> dict:
+    ty = s.get("type")
+    e = {"type": ty}
+    if ty == "decalage":
+        e["marge"] = evaluer_expr(s.get("marge", 0), env)
+        e["rayon"] = evaluer_expr(s["rayon"], env) if "rayon" in s else None
+        e["largeur_nervure"] = evaluer_expr(s["largeur_nervure"], env) if "largeur_nervure" in s else None
+        e["nervures"] = [[[evaluer_expr(c, env) for c in bout] for bout in n] for n in s.get("nervures", [])]
+    elif ty == "cercle":
+        e["centre"] = [evaluer_expr(c, env) for c in s["centre"]]
+        e["diametre"] = evaluer_expr(s.get("diametre", 0), env)
+    elif ty == "polygone":
+        e["points"] = [[evaluer_expr(c, env) for c in pt] for pt in s["points"]]
+        e["rayon"] = evaluer_expr(s["rayon"], env) if "rayon" in s else None
+    return e
+
+
+def contexte_evidements(g: Geometrie, cdc: CahierDesCharges, x_charge: float) -> ev.Contexte:
+    ap = next((f for f in g.faces if f.id == g.appui), None)
+    return ev.Contexte(g.faces, g.fixation, g.appui, _trous_utilises(g, cdc),
+                       np.array([x_charge, 0.0, ap.points[0, 2] if ap is not None else 0.0]),
+                       lambda t: _distance_pli(t, cdc.procede.ves_disponibles))
+
+
+def _distance_pli(t: float, ves: list[float]) -> float:
+    """Distance protégée de part et d'autre d'une ligne de pli : 2,5 t + rayon intérieur (≈ 0,16 x vé)."""
+    v, _ = vé_et_aile(t, ves)
+    return 2.5 * t + 0.16 * v
+
+
+def _trous_utilises(g: Geometrie, cdc: CahierDesCharges) -> list[tuple[float, float]]:
+    fix = g.face(g.fixation)
+    poly = fix.points[:, 1:]
+    return [(h.y, h.z) for h in cdc.grille_fixation.trous
+            if any(abs(h.y - c) < 1e-6 for c in g.colonnes_vis)
+            and _dans_polygone(poly, (h.y, h.z)) and _distance_bords(poly, (h.y, h.z)) >= MARGE_TROU]
+
+
+def _fragmenter(occ, entrees: list[int]) -> list[list[tuple[int, int]]]:
+    """Découpage commun des surfaces (Gmsh saute le découpage d'une surface seule : on la garde telle quelle)."""
+    if len(entrees) == 1:
+        return [[(2, entrees[0])]]
+    return occ.fragment([(2, s) for s in entrees], [])[1]
+
+
+def courbes_contour(occ, anneau: np.ndarray) -> list[int]:
+    """Courbes OCC d'un contour d'évidement : droites pour les bords droits, splines pour les arrondis."""
+    courbes = []
+    morceaux = ev.chaines_contour(anneau)
+    if morceaux[0][0] == "spline_fermee":
+        ids = [occ.addPoint(*p) for p in morceaux[0][1]]
+        return [occ.addSpline(ids + [ids[0]])]
+    premier = None
+    precedent = None
+    for k, (nature, pts) in enumerate(morceaux):
+        debut = precedent if precedent is not None else occ.addPoint(*pts[0])
+        premier = debut if premier is None else premier
+        fin = premier if k == len(morceaux) - 1 else occ.addPoint(*pts[-1])
+        if nature == "ligne":
+            courbes.append(occ.addLine(debut, fin))
+        else:
+            milieu = [occ.addPoint(*p) for p in pts[1:-1]]
+            courbes.append(occ.addSpline([debut, *milieu, fin]))
+        precedent = fin
+    return courbes
+
+
+def surface_percee(occ, f: Face, points: np.ndarray | None = None, decalage=0.0) -> int:
+    """Surface plane OCC d'une face, avec ses évidements (points éventuellement décalés pour l'export)."""
+    p = f.points if points is None else points
+    ids = [occ.addPoint(*q) for q in p]
+    lignes = [occ.addLine(ids[i], ids[(i + 1) % len(ids)]) for i in range(len(ids))]
+    boucles = [occ.addCurveLoop(lignes)]
+    rep = ev.Repere.de(f.points, f.normale())
+    sens = np.sign(_aire_signee(rep.vers_2d(f.points)))
+    for trou in f.trous:
+        trou = np.asarray(trou)
+        if np.sign(_aire_signee(rep.vers_2d(trou))) != sens:
+            trou = trou[::-1]  # Gmsh veut les trous dans le même sens que le contour (constaté : sinon OCC
+            # ajoute l'aire du trou au lieu de la retrancher, et les jonctions en T se perdent)
+        boucles.append(occ.addCurveLoop(courbes_contour(occ, trou + decalage)))
+    return occ.addPlaneSurface(boucles)
+
+
+def _aire_signee(p2: np.ndarray) -> float:
+    x, y = p2[:, 0], p2[:, 1]
+    return 0.5 * float(np.sum(x * np.roll(y, -1) - np.roll(x, -1) * y))
+
+
+def _raffiner_trous(g: Geometrie, taille: float) -> None:
+    """Maille fine au bord des évidements (concentration de contrainte), qui grossit jusqu'à `taille` en
+    s'éloignant. Les courbes des trous sont retrouvées par leur position après le découpage OCC. Avec la
+    subdivision en quadrangles, la taille finale est la moitié de la taille demandée à Gmsh."""
+    trous = [(np.asarray(tr), r) for f in g.faces for tr, r in zip(f.trous, f.rayons_trous)]
+    seuils = []
+    for c in (tag for _, tag in gmsh.model.getEntities(1)):
+        bas, haut = gmsh.model.getParametrizationBounds(1, c)
+        pts = np.array(gmsh.model.getValue(1, c, [bas[0] + k * (haut[0] - bas[0]) / 4 for k in range(5)])).reshape(-1, 3)
+        for anneau, r in trous:
+            if _distance_polyligne(pts, anneau).max() < 0.05 * max(r, 1.0):
+                h = min(taille, max(TAILLE_TROU_MIN, TAILLE_TROU_RELATIVE * r))
+                seuils.append((c, h))
+                break
+    champs = []
+    for h in sorted({h for _, h in seuils}):
+        dist = gmsh.model.mesh.field.add("Distance")
+        gmsh.model.mesh.field.setNumbers(dist, "CurvesList", [c for c, hc in seuils if hc == h])
+        gmsh.model.mesh.field.setNumber(dist, "Sampling", 100)
+        seuil = gmsh.model.mesh.field.add("Threshold")
+        gmsh.model.mesh.field.setNumber(seuil, "InField", dist)
+        gmsh.model.mesh.field.setNumber(seuil, "SizeMin", 2 * h)
+        gmsh.model.mesh.field.setNumber(seuil, "SizeMax", 2 * taille)
+        gmsh.model.mesh.field.setNumber(seuil, "DistMin", h)
+        gmsh.model.mesh.field.setNumber(seuil, "DistMax", h + 4 * taille)
+        champs.append(seuil)
+    if champs:
+        mini = gmsh.model.mesh.field.add("Min")
+        gmsh.model.mesh.field.setNumbers(mini, "FieldsList", champs)
+        gmsh.model.mesh.field.setAsBackgroundMesh(mini)
+    gmsh.option.setNumber("Mesh.MeshSizeFromPoints", 0)
+    gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", 0)
+    gmsh.option.setNumber("Mesh.MeshSizeExtendFromBoundary", 0)
+    gmsh.option.setNumber("Mesh.MeshSizeMax", 2 * taille)
+    gmsh.option.setNumber("Mesh.MeshSizeMin", 2 * TAILLE_TROU_MIN)
+
+
+def _distance_polyligne(pts: np.ndarray, anneau: np.ndarray) -> np.ndarray:
+    """Distance de chaque point à un contour fermé (segments)."""
+    a = anneau
+    b = np.roll(anneau, -1, axis=0)
+    ab = b - a
+    t = np.clip(np.einsum("pk,sk->ps", pts, ab) - np.einsum("sk,sk->s", a, ab), 0, None)
+    t = np.clip(t / np.maximum(np.einsum("sk,sk->s", ab, ab), 1e-12), 0, 1)
+    proj = a[None] + t[..., None] * ab[None]
+    return np.linalg.norm(pts[:, None] - proj, axis=2).min(axis=1)
 
 
 # ---------- outils géométriques ----------
@@ -467,6 +695,21 @@ def _direction_interieure(f: Face, a: np.ndarray, u: np.ndarray) -> np.ndarray:
     d = np.cross(f.normale(), u)
     centre = f.points.mean(axis=0)
     return d if np.dot(centre - a, d) > 0 else -d
+
+
+def elements_retournes(noeuds: dict, elements: dict[int, list[int]]) -> list[int]:
+    """Quadrangles non convexes ou retournés : à un coin, le produit vectoriel des deux arêtes n'a pas le sens
+    de la normale de l'élément (CalculiX refuserait le calcul : jacobien négatif)."""
+    if not elements:
+        return []
+    ids = list(elements)
+    p = np.array([[noeuds[n] for n in elements[e][:4]] for e in ids])  # (n, 4, 3)
+    normale = np.cross(p[:, 2] - p[:, 0], p[:, 3] - p[:, 1])
+    mauvais = np.zeros(len(ids), bool)
+    for k in range(4):
+        a, b, c = p[:, k], p[:, (k + 1) % 4], p[:, (k + 3) % 4]
+        mauvais |= np.einsum("ij,ij->i", np.cross(b - a, c - a), normale) <= 0
+    return [ids[i] for i in np.flatnonzero(mauvais)]
 
 
 def _connexe(elements: dict[int, list[int]]) -> bool:

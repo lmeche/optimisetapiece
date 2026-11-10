@@ -1,0 +1,45 @@
+# Carnet d'apprentissage de Gabarit
+
+4 fiche(s), 8 leçon(s), 1 expérience(s).
+
+## Concepts mesurés
+
+| Fiche | Concept | Faisable | kg/kN | Masse (kg) | Effort tenu (kN) | L_eq (mm) | eta | Flexion | Flambement | Limite | Parent |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| F002 | L + V, poche de 45 cm² au milieu du dessus (première ESO, 8 mm) | oui | 0.2740 | 4.199 | 15.32 | 1847 | 0.225 | 22 % | 3.03 | le flambement | F001 |
+| F001 | L + V (idée d'Iwan) | oui | 0.2767 | 4.376 | 15.82 | 1852 | 0.224 | 22 % | 3.04 | le flambement | - |
+| F003 | L + V, poche de 46 cm² au milieu du dessus (ESO 15 %, 6 mm) | oui | 0.2849 | 4.195 | 14.72 | 1867 | 0.219 | 24 % | 3.02 | le flambement | F001 |
+| F004 | L + V, poche de 99 cm² dans le dessus (ESO 30 %, 6 mm) | non | 0.4276 | 3.987 | 9.33 | 1895 | 0.148 | 23 % | 3.02 | la plastification (contrainte au point critique), NON TENU (marge x0.95) | F001 |
+
+## Leçons
+
+- **L001** (observee, humain (phase 3)) : Une équerre en U simple (dos, dessus, deux ailes) plafonne vers 4 à 5 kN. *Mécanisme* : Le dessus n'est porté que par ses bords : il plie localement sous l'appui, loin de tout raidisseur. Chemin d'effort en flexion, L_eq grande et eta faible. *Portée* : Pièces où l'effort arrive au milieu d'une tôle portée seulement par ses bords. *Preuves* : 1 observation(s) écrite(s) à la main (1 dans son sens).
+  - observation, conforme : constat des phases 2 à 4, fait avant le carnet (chiffres non relus dans une fiche) : optimisation de l'équerre en U de la phase 3
+- **L002** (observee, humain (phase 4)) : Soutenir le dessus près de l'appui par une diagonale (L + V) fait passer l'effort en membrane : le L + V tient plus de trois fois l'effort de l'équerre en U. *Mécanisme* : La diagonale descend l'effort en compression vers le bas du dos ; le dessus travaille en traction vers le haut du dos. Triangle dos, dessus, diagonale : chemin d'effort court, peu de flexion. *Portée* : Effort en porte-à-faux, fixation sur une face verticale. *Preuves* : 1 observation(s) écrite(s) à la main (1 dans son sens).
+  - observation (F001), conforme : fiche F001 : 15,8 kN tenus pour 4,38 kg, 22 % de l'énergie en flexion ; constat des phases 2 à 4, fait avant le carnet (chiffres non relus dans une fiche) pour l'équerre en U
+- **L003** (hypothese, humain (phase 4)) : Les contraintes se concentrent aux extrémités des lignes de soudure en T et aux jonctions en un seul point : préférer des liaisons sur toute la largeur et des retours qui se rejoignent bord à bord. *Mécanisme* : Une liaison qui s'arrête au milieu d'une tôle concentre l'effort à son extrémité. *Portée* : Soudures en T, retours, doublages. *Preuves* : 1 observation(s) écrite(s) à la main (1 non jugée(s)).
+  - observation, non jugée : constat fait avant l'exclusion des extrémités de jonction : le pic lu à ces points dépendait surtout du maillage (135 à 183 MPa de 8 à 4 mm au bout du retour du dos de L + V). Gabarit exclut maintenant une boule de 10 mm autour de ces points et lit la contrainte à son bord : l'effet réel reste à mesurer par une expérience
+- **L004** (hypothese, humain (phase 4)) : La bande du dos entre le pli et les vis du haut est fortement sollicitée (le dessus tire dessus) ; écarter les vis et doubler le dos aident. *Mécanisme* : La traction du dessus passe par le pli dans le dos jusqu'aux vis du haut. *Portée* : Concepts en L vissés par le dos. *Preuves* : 1 observation(s) écrite(s) à la main (1 contre).
+  - observation (F001), contraire : constat fait avant l'exclusion des extrémités de jonction : le pic lu à ces points dépendait surtout du maillage (135 à 183 MPa de 8 à 4 mm au bout du retour du dos de L + V). Avec la règle actuelle (fiche F001 à 6 mm), le dos culmine à 96 MPa près du pli contre 146 MPa au point critique, et 75 % de sa surface travaille sous 20 % de la contrainte utile : cette bande n'est pas ce qui limite L + V
+- **L005** (observee, Gabarit (fiche F001)) : À l'optimum de L + V, la contrainte limite moins que le flambement de la diagonale (premier mode : V.diag 100 %) : marge x1,6 en plastification, x1,01 au flambement. L'optimiseur a donc allégé jusqu'à ce que la diagonale soit sur le point de flamber. *Mécanisme* : Diagonale de 5 mm comprimée, bords libres, sans retour (h_ret_diag = 0 à l'optimum). *Portée* : L + V et concepts dont une tôle comprimée porte l'effort. *Preuves* : 1 observation(s) écrite(s) à la main (1 dans son sens).
+  - observation (F001), conforme : fiche F001 à 6 mm : marges plastification 1,61, flambement 1,01, vis 3,05 ; mode V.diag 100 %, L.dessus 18 %
+- **L006** (observee, Gabarit (fiche F001)) : Dans L + V, la jambe doublée contre le dos et le dos lui-même travaillent peu : 98 % et 75 % de leur surface sous 20 % de la contrainte utile, 22 % de la masse à eux deux. *Mécanisme* : Le dos ne transmet l'effort qu'entre le pli du dessus, les vis et le pied de la jambe ; la jambe doublée double une matière déjà peu chargée. *Portée* : L + V ; à vérifier sur les concepts à doublage. *Preuves* : 1 observation(s) écrite(s) à la main (1 dans son sens).
+  - observation (F001), conforme : fiche F001 à 6 mm : V.jambe 9 % de la masse, eta 0,08 ; L.dos 13 % de la masse, eta 0,10. Les zones protégées (vis, plis, soudures, bande de bord) n'y laissent rien à évider pour l'ESO
+- **L007** (observee, Gabarit (fiche F001)) : Sur L + V, c'est la zone d'introduction de l'effort qui fixe l'effort tenu : 146 MPa au bout du dessus, à 30 mm de l'axe de la charge, et autant dans la diagonale juste sous l'appui, contre 111 MPa au plus au-delà de 50 mm de cet axe (96 MPa dans le dos). Étaler l'effort sous l'appui est le premier levier ; alléger loin de l'appui ne paie que si cela ne fait pas monter cette zone. *Mécanisme* : L'effort de 9,8 kN entre par le disque Ø50 de l'adaptateur, à 5 mm du bout libre du dessus et juste au-dessus de la soudure de la diagonale : le dessus fléchit localement autour de l'appui et la diagonale reçoit l'effort sur une courte longueur de soudure. *Portée* : Tous les concepts : chaque compte rendu dit à quelle distance de l'axe de la charge est le point critique et ce que vaut la contrainte au-delà de 50 mm. *Preuves* : 2 observation(s) écrite(s) à la main (1 dans son sens, 1 non jugée(s)).
+  - observation (F001), conforme : fiche F001 à 6 mm : point critique à 30 mm de l'axe de la charge, x1,31 sur la contrainte du reste de la pièce (diagnostic du compte rendu)
+  - observation (F001), non jugée : limite de la mesure : cette contrainte locale dépend de la modélisation de l'appui (efforts égaux sur les noeuds du disque Ø50, disque de 30 mm exclu) et de la maille. Optimum L + V : 138, 146 puis 161 MPa à 8, 6 puis 4 mm (0,2625, 0,2767 puis 0,3057 kg/kN), le pic passant à 4 mm sur la jonction de la diagonale sous l'appui. Les fiches se comparent donc à maille égale
+- **L008** (observee, Gabarit (fiches F002 à F004, optimisation topologique)) : Sur L + V à son optimum, une poche au milieu du dessus ne fait pas baisser le kg/kN : à 4 % de la masse, l'écart reste dans le bruit car la contrainte utile monte autant que la masse baisse ; à 9 % de la masse, la pièce ne tient plus. *Mécanisme* : Le milieu du dessus, peu contraint, transmet pourtant la traction du dessus vers le dos ; la poche la renvoie dans les bandes latérales et vers la zone d'appui, qui fixe l'effort tenu. *Portée* : Concepts limités par la zone d'appui ou par le flambement ; une poche ne paie que dans une tôle qui ne porte pas le chemin d'effort principal. *Preuves* : 2/4 comparaison(s) dans son sens.
+  - comparaison F001, F002 : kg_par_kN 0.2767 / 0.2740 (non_concluante) : poche de 45 cm² de la première ESO : écart sous le seuil, comme l'annonce la leçon
+  - comparaison F001, F003 : kg_par_kN 0.2767 / 0.2849 (non_concluante) : poche de 46 cm² (ESO 15 % à 6 mm) : écart sous le seuil, comme l'annonce la leçon
+  - comparaison F001, F003 : sigma_utile 145.7639 / 156.5621 (conforme) : la poche de 46 cm² fait monter la contrainte utile
+  - comparaison F001, F004 : kg_par_kN 0.2767 / 0.4276 (conforme) : poche de 99 cm² (ESO 30 %) : pièce non tenue
+
+## Expériences
+
+- E001 (depuis F001, leçon L007) : Prolonger le haut de la diagonale par une patte pliée à plat sous le dessus, centrée sous l'axe de la charge (x = 320) et soudée contre lui (doublage), pour étaler l'effort de l'appui sur deux épaisseurs et sur toute la largeur de la diagonale ; prédiction : kg/kN en baisse d'au moins 3 %
+
+## Statistiques (3 concept(s) faisable(s))
+
+- Sur 3 concepts faisables, la variance de ln(kg/kN) vient pour 8 % du chemin d'effort (L_eq), pour 51 % de l'utilisation de la matière (eta) et pour +41 % de leur covariance (identité vérifiée à 1e-15).
+- Bruit du maillage : le kg/kN à 6 mm s'écarte de celui à 8 mm de +2.9 % en moyenne, avec 4.4 % d'écart-type d'un concept à l'autre (4 concepts) : deux concepts à moins d'environ 13 % l'un de l'autre peuvent s'inverser avec la maille.
+- Moins de cinq concepts faisables : pas encore de recherche de liens avec les caractéristiques.

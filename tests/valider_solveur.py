@@ -59,9 +59,12 @@ def main() -> int:
         ok &= abs(e) < tol
         print(f"{nom:34s} calcul {calc:10.3f}  RDM {theo:10.3f}  écart {e:+6.2f} %  {'OK' if abs(e) < tol else 'ÉCHEC'}")
 
-    # 2. Flambement (force unitaire : le facteur est la charge critique en N)
-    res = lancer(modele((-1.0, 0.0, 0.0)), dossier, "flambement", analyse="flambement", n_modes=2)
-    pcr = res.facteurs_flambement[0]
+    # 2. Flambement. Effort de 30 kN, proche de la charge critique : avec une force unitaire (facteur de
+    # l'ordre de 40 000), le solveur de valeurs propres de CalculiX rend un facteur faux environ une fois sur
+    # deux (constaté : 0,8 ; 0,9 ; 19 au lieu de 37 778) ; avec un facteur de l'ordre de 1, il est stable.
+    effort = 30000.0
+    res = lancer(modele((-effort, 0.0, 0.0)), dossier, "flambement", analyse="flambement", n_modes=2)
+    pcr = res.facteurs_flambement[0] * effort
     pcr_theo = math.pi**2 * acier.E * I / (4 * L**2)
     e = ecart(pcr, pcr_theo)
     ok &= abs(e) < 5

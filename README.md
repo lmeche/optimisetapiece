@@ -14,7 +14,8 @@ Plan d'action : voir le document « Gabarit : plan d'action ».
 - [x] Phase 3 : moteur d'optimisation validé (`tests/valider_optimiseur.py`) et appliqué à l'équerre en U (`exemples/phase3_optimisation.py`)
 - [x] Phase 4 : format de concept déclaratif, concept « L + V » optimisé, IA Concepteur (`exemples/concevoir.py`)
 - [x] Logiciel : prototype d'application locale (`Gabarit.bat` ou `python -m gabarit.app`)
-- [ ] Phase 5 et suivantes : IA Analyste, compte rendu, installeur .exe, recoupement CATIA
+- [x] Version 2 : mesures fiables (garde-fou du solveur, extrémités de jonction), compte rendu chiffré, évidements, optimisation topologique, carnet d'apprentissage, IA Analyste et boucle d'apprentissage (`exemples/apprendre.py`)
+- [ ] Suite : introduction de l'effort par contact avec l'adaptateur, vérification non linéaire (plasticité, grands déplacements) des meilleurs concepts, installeur .exe, recoupement CATIA
 
 ## Phase 2 : ce que fait une évaluation (`gabarit/evaluation.py`)
 
@@ -23,7 +24,7 @@ Plan d'action : voir le document « Gabarit : plan d'action ».
 3. Vis M10 : noeuds encastrés dans un rayon de 8 mm autour de chaque trou utilisé.
 4. Contact du dos sur le socle : ensembles actifs (on bloque en X les noeuds qui pénètrent, on relâche ceux qui tirent).
 5. Effort de 9 810 N réparti sur le disque Ø50 de l'adaptateur.
-6. Statique : von Mises, flèche, traction par vis. Contrainte « utile » = hors singularités (anneau de 16 mm autour des vis, disque de 30 mm sous l'appui).
+6. Statique : von Mises, flèche, traction par vis. Contrainte « utile » = hors singularités (anneau de 16 mm autour des vis, disque de 30 mm sous l'appui, boule de 10 mm autour de chaque extrémité de jonction : bout d'une soudure en T, d'un retour ou d'un doublage, où la contrainte d'un modèle coque croît sans fin quand on affine le maillage).
 7. Flambement linéaire : seuls les facteurs retrouvés à 3 % près sur deux maillages sont retenus (des modes parasites isolés apparaissent sinon).
 8. Effort tenu = 9 810 x Re / contrainte utile ; objectif masse / effort tenu.
 
@@ -102,26 +103,36 @@ Optimisation : `python exemples/optimiser_concept.py concepts/sae51_L_V.json 4`.
 
 Résultat (168 essais, 46 faisables, 1 h sur 4 coeurs) : **le L + V tient 1 t**, l'équerre en U n'y arrivait pas.
 
-| Optimum (tôles 5 + 5 mm) | Maille 8 mm (exploration) | 6 mm | 4 mm |
+| Optimum (tôles 5 + 5 mm) | Maille 8 mm (exploration) | 6 mm (fiches du carnet) | 4 mm |
 | --- | --- | --- | --- |
 | Masse | 4,38 kg | 4,38 kg | 4,38 kg |
-| Contrainte utile sous 9 810 N | 138 MPa | 154 MPa | 183 MPa |
-| Effort tenu avant plastification | 16,7 kN | 15,0 kN | 12,6 kN |
-| Facteur de flambement | 3,06 | 3,12 | 3,01 |
+| Contrainte utile sous 9 810 N | 138 MPa | 146 MPa | 161 MPa |
+| Effort tenu avant plastification | 16,7 kN | 15,8 kN | 14,3 kN |
+| Facteur de flambement | 3,06 | 3,04 | 3,01 |
 | Traction maxi par vis | 10,9 kN | 11,0 kN | 10,8 kN |
-| Masse / effort tenu | 0,263 kg/kN | 0,292 kg/kN | 0,348 kg/kN |
+| Masse / effort tenu | 0,263 kg/kN | 0,277 kg/kN | 0,306 kg/kN |
 
 Géométrie : largeur 148 mm, dessus à z = 192 mm, dos de z = 97 à 192 avec retours de 33 mm sur ses
 bords, vis dans les colonnes y = ±60, V de 102 mm de large, pied à z = 59, diagonale soudée sous le
 dessus en x = 313 (juste avant l'appui). La contrainte de flambement (>= 3) est celle qui limite :
-il reste de la marge en plastification. La contrainte utile augmente quand la maille s'affine
-(extrémités de la soudure diagonale / dessus) : on retient la valeur à 4 mm.
+il reste de la marge en plastification (x1,6 à 6 mm).
+
+La contrainte utile augmente encore quand la maille s'affine, parce qu'elle est prise dans la zone
+d'introduction de l'effort : au bout libre du dessus, à 5 mm du disque d'appui, et dans la diagonale juste
+sous l'appui (6 mm), puis sur la jonction de la diagonale sous l'appui (4 mm). Au-delà de 50 mm de l'axe de la
+charge, elle ne dépasse pas 111 MPa (96 MPa dans le dos). Le chiffre absolu dépend donc de la façon dont
+l'effort entre dans la pièce et de sa modélisation (efforts égaux sur les noeuds du disque Ø50) : les concepts
+se comparent à maille égale (6 mm pour les fiches du carnet), et le compte rendu de chaque concept dit si son
+point critique est dans cette zone. Tableau refait avec la règle actuelle de la contrainte utile et le
+garde-fou du solveur (voir la version 2) ; l'ancien donnait 154 et 183 MPa à 6 et 4 mm, lus au bout du retour
+du dos, un point singulier.
 
 Seconde passe sur tôles de 2 à 4 mm (`concepts/sae51_L_V_mince.json`, 128 essais) : aucun L + V
 faisable, le meilleur tient 8,1 kN (4 + 4 mm, 1,6 kg, version étroite). Repris à la main en 5 + 5 mm,
 ce L + V étroit pèse 2,0 kg et tient 12,4 kN, mais flambe à 1,1 x 1 t ; des retours de 28 mm sur la
 diagonale ne l'aident pas (ils créent de nouvelles concentrations à leurs coins). Piste pour la suite :
-un raidissement contre le flambement de la version étroite, qui gagnerait plus de 2 kg.
+un raidissement contre le flambement de la version étroite, qui gagnerait plus de 2 kg. (Calculs faits
+avant l'exclusion des extrémités de jonction et le garde-fou du solveur : chiffres à refaire.)
 
 ### L'IA Concepteur (`gabarit/ia/`)
 
@@ -183,6 +194,159 @@ meilleures passent ensuite par l'optimiseur. Régler la fenêtre de contexte du 
 Tests hors ligne (sans clé ni réseau, faux serveur local) : `python tests/tester_concepteur.py`,
 `python tests/tester_concepteur_ouvert.py` et `python tests/tester_exploration.py`.
 
+## Version 2 : apprendre et alléger
+
+But : que l'IA comprenne pourquoi un concept tient plus de kN par kg qu'un autre, qu'elle s'en serve pour
+concevoir les suivants, et que les tôles puissent être évidées. Ce que l'IA apprend repose sur des mesures de
+Gabarit : rien de ce qu'elle écrit n'est pris pour une mesure.
+
+### Des mesures fiables d'abord
+
+- **Garde-fou du solveur** (`gabarit/fem/calculix.py`) : chaque calcul statique vérifie son bilan d'énergie
+  (énergie des éléments = demi-travail des efforts, à 5 % près) et l'équilibre des réactions (à 0,1 % près ;
+  une solution saine donne 1e-7). Une solution fausse est recalculée (3 essais), un mécanisme est refusé.
+  Mesuré sur L + V : en 4 tâches, le solveur SPOOLES rend 3 solutions fausses sur 40 (équilibre faux de 4 à
+  18 %, énergie jusqu'à +1 563 %), aucune en 1 tâche. Une tâche est donc le défaut (variable
+  `GABARIT_THREADS`), pour un temps à peine plus long. Les vérifications à 6 et 4 mm faites avant ce
+  garde-fou (en 4 tâches) peuvent être fausses : celles du tableau L + V ci-dessus ont été refaites.
+- **Extrémités de jonction** (point 6 de la phase 2) : sur L + V, la contrainte au bout du retour du dos valait
+  135, 154, 162 puis 183 MPa à 8, 6, 5 et 4 mm, sans converger. Avec l'exclusion, la contrainte utile vaut
+  157, 138, 146, 149 et 161 MPa à 10, 8, 6, 5 et 4 mm. Ce qui dérive encore vient de la zone d'introduction
+  de l'effort (voir le tableau L + V) : le compte rendu le signale pour chaque concept, et un écart de quelques %
+  entre deux concepts reste du bruit, d'où le seuil de 3 % des expériences et l'estimation du bruit du maillage
+  dans le carnet.
+- **Affinage local** (`gabarit/optimisation.py`) : COBYLA demande au moins n + 2 évaluations ; il est maintenant
+  arrêté au budget fixé, et son point de départ, déjà calculé, n'est pas refait (contrôle dans
+  `tests/valider_optimiseur.py`).
+
+### Compte rendu chiffré (`gabarit/analyse/compte_rendu.py`)
+
+Identité exacte : **kg/kN = 1000 rho / Re x L_eq / eta**.
+- L_eq (mm), longueur équivalente du chemin d'effort = somme sur la matière de V x contrainte / F : petite quand
+  l'effort va droit aux fixations en traction ou compression, grande avec des détours ou de la flexion.
+- eta, utilisation de la matière = contrainte moyenne / contrainte au point critique : 1 si toute la matière
+  travaillait autant que le point le plus chargé, 0,5 au plus pour une tôle en flexion pure.
+
+Le rapport des kg/kN de deux concepts est donc exactement le rapport des L_eq divisé par celui des eta. Le
+compte rendu donne aussi, pour chaque face, sa part de masse, d'énergie et de L_eq, son eta, sa part de flexion,
+la part de sa surface sous 20 % de la contrainte utile (matière peu utile) et une carte d'utilisation en texte ;
+le point critique situé (face, bord, soudure, appui) avec sa distance à l'axe de la charge et la contrainte
+maximale au-delà de 50 mm de cet axe (la zone d'appui fixe-t-elle l'effort tenu ?), la limite (plastification,
+flambement, vis) et les marges, les faces du mode de flambement, des pistes automatiques. Validé sur des cas
+analytiques (flexion, traction, Euler) et sur l'identité exacte : `python tests/valider_analyse.py` (19 contrôles).
+
+### Évidements (`gabarit/concepts/evidements.py`)
+
+Poches qui suivent le contour d'une face (« decalage », avec nervures possibles), trous ronds et découpes
+polygonales, déclarés dans une tôle comme un retour. La variable « evidement » laisse l'optimiseur décider si la
+poche vaut sa masse et régler la largeur de la bande laissée au bord. Zones protégées (plis, soudures, vis,
+appui), bandes de matière d'au moins max(2 t, 10 mm), coins arrondis d'au moins max(t, 5 mm), maillage raffiné
+au bord des trous. Validation (`python tests/valider_evidements.py`) : plaque trouée en traction, contrainte au
+bord du trou à +0,06 % de la valeur de Peterson (Kt 2,349), masse à 0,003 % près.
+
+### Optimisation topologique (`gabarit/analyse/topologie.py`)
+
+`python exemples/alleger.py concepts/sae51_L_V.json --valeurs tests/donnees/sae51_L_V_optimum.json`
+
+Méthode ESO (Xie et Steven, 1993), en « tout ou rien » sur le maillage coque : à chaque itération, calcul
+statique puis retrait de 5 % de la matière évidable la moins sollicitée (contrainte de peau filtrée sur deux
+mailles pour éviter les damiers), hors zones protégées et bandes de bord. L'ESO ne fait que classer la
+matière : le bord en escalier fausse le kg/kN des itérations. Aux niveaux 15, 30, 45 et 60 %, la matière
+retirée devient des poches fabricables (coins arrondis au rayon de fabrication, parties trop étroites
+supprimées), et chaque candidat est recalculé par la chaîne complète (maillage raffiné au bord des trous,
+flambement confirmé sur deux maillages) : c'est ce calcul qui décide. Une face qui participe au premier mode de
+flambement n'est pas évidée quand la marge au flambement est faible.
+
+Sur L + V à son optimum (maille 6 mm), aucune poche ne paie, et chaque candidat dit pourquoi
+(kg/kN = masse x contrainte utile, et où est passé le point critique) :
+
+| Candidat | Poche dans le dessus | Masse | Contrainte utile | kg/kN | Flambement |
+| --- | --- | --- | --- | --- | --- |
+| Sans poche | - | 4,38 kg | 146 MPa | 0,277 | 3,04 |
+| ESO 15 % | 46 cm², au milieu | 4,20 kg (-4 %) | 157 MPa (+7 %) | 0,285 (+3 %) | 3,02 |
+| ESO 30 % | 99 cm² | 3,99 kg (-9 %) | 247 MPa | 0,428, non tenu | 3,02 |
+| ESO 45 % | 154 cm² | 3,77 kg (-14 %) | 254 MPa | 0,416, non tenu | 2,98 |
+
+Le milieu du dessus, peu contraint, transmet pourtant la traction du dessus au dos : une poche la renvoie dans
+les bandes latérales et vers la zone d'appui, qui fixe l'effort tenu. Le dos et la jambe, qui travaillent peu,
+n'offrent rien à évider une fois les zones protégées retirées (vis, plis, soudures, bandes de bord). Le calcul
+du niveau 62 % a échoué (CalculiX). La première ESO, faite avant l'exclusion des extrémités de jonction,
+annonçait un kg/kN x1,36 pour une poche voisine : ce pic était celui du bout du retour du dos ; recalculée avec
+la règle actuelle, cette poche (fiche F002 du carnet) donne -1 %, dans le bruit.
+
+### Le carnet, l'IA Analyste et la boucle (`gabarit/apprentissage/`)
+
+**Le carnet** (`apprentissage/carnet.json`, et `carnet.md` lisible) garde trois sortes d'entrées :
+- des **fiches** : chaque concept mesuré par la chaîne complète à 6 mm avec flambement (kg/kN, L_eq, eta, limite,
+  marges, point critique, bilan de chaque face, caractéristiques comme le nombre de tôles, de soudures ou de
+  retours), avec le kg/kN de l'optimiseur à 8 mm comme mesure de convergence ;
+- des **leçons** : un énoncé, son mécanisme, sa portée et ses preuves. Une IA désigne deux fiches, une grandeur et
+  le sens attendu ; Gabarit lit lui-même les valeurs et tranche (seuil 3 %) ;
+- des **expériences** : modifier UNE chose d'un concept, avec la prédiction (grandeur, sens) écrite et enregistrée
+  avant le calcul. Une fois l'enfant mesuré, Gabarit rend le verdict : confirmée, contredite ou non concluante.
+  Une pièce nettement non faisable compte comme moins bonne quel que soit son kg/kN. Un écart de kg/kN ne compte
+  que s'il dépasse le seuil dans le même sens aux deux mailles (6 mm pour la fiche, 8 mm pour l'optimiseur) :
+  sinon il dépend de la maille, et l'expérience est non concluante.
+
+Statut d'une leçon : *hypothèse* (rien ne l'étaye), *observée* (des comparaisons vont dans son sens ; deux
+concepts diffèrent toujours par plusieurs choses, une comparaison ne prouve pas une cause), *confirmée* ou
+*contredite* (par au moins une expérience), *nuancée* (expériences dans les deux sens). Statistiques sur toutes
+les fiches : part des écarts de kg/kN due au chemin d'effort (L_eq) et à l'utilisation de la matière (eta)
+(décomposition exacte de la variance de ln kg/kN), liens entre les caractéristiques et le kg/kN (Spearman, valeur
+p par permutation exacte jusqu'à 8 concepts, corrigée de Holm pour les tests multiples), bruit du maillage
+(décalage du kg/kN entre 8 et 6 mm d'un concept à l'autre).
+
+**L'IA Analyste** (`gabarit/apprentissage/analyste.py`, Claude ou modèle ouvert) reçoit les fiches nouvelles,
+leurs références et les décompositions exactes calculées par Gabarit, et répond en JSON imposé : une explication
+des écarts, des leçons (nouvelles, précisées ou appuyées, avec leurs comparaisons) et des expériences. Tout est
+contrôlé avant d'entrer dans le carnet : fiches et grandeurs connues, nombres de l'IA ignorés, leçon nouvelle
+refusée si toutes ses comparaisons vont contre les mesures.
+
+**La boucle** (`gabarit/apprentissage/boucle.py`), un cycle à la fois :
+1. choisir : tester la plus ancienne expérience prévue, sinon améliorer le meilleur concept (une modification,
+   prédiction écrite dans le concept), et un cycle sur trois explorer un principe différent de tous ceux du
+   carnet ;
+2. l'IA Concepteur écrit le concept avec les leçons du carnet dans son prompt (une leçon que des constats
+   contredisent y est signalée). Pendant une expérience, son outil de contrôle ne fait pas de calcul rapide : la
+   prédiction se fait à l'aveugle. Hors de la boucle (`exemples/concevoir.py`, l'appli, l'exploration), l'IA
+   Concepteur lit aussi la version courte du carnet ;
+3. mini-optimisation : un enfant part des cotes optimisées de son parent (son premier essai est le parent
+   modifié, 16 + 32 + 16 essais ensuite), un concept exploré part de rien avec un budget plus grand
+   (32 + 64 + 24) ; budget et départ sont notés dans la fiche ;
+4. fiche à 6 mm avec flambement, verdict de l'expérience, analyse, carnet enregistré après chaque étape.
+
+```
+python exemples/apprendre.py --cycles 3                       # Claude conçoit et analyse (ANTHROPIC_API_KEY)
+python exemples/apprendre.py --cycles 20 --moteur ouvert --url http://localhost:1234/v1 --modele qwen3-8b
+python exemples/apprendre.py --cycles 20 --moteur ouvert --analyste claude   # formes gratuites, analyse par Claude
+python exemples/apprendre.py --afficher                       # le carnet, lisible
+python exemples/apprendre.py --analyser F001 F002             # l'IA Analyste relit des fiches, sans calcul
+```
+
+Un cycle prend de 5 à 20 minutes ; le journal de chaque série est dans `resultats/apprentissage/<date>/journal.md`.
+Avec un modèle ouvert comme concepteur, l'analyse par Claude ne coûte qu'une requête par cycle. Essai réel de la
+reprise sur L + V (8 mm) : le premier essai redonne exactement le kg/kN du parent (0,2625), et l'affinage descend
+ensuite à 0,2578 kg/kN.
+
+**Le carnet de départ** (`python exemples/amorcer_carnet.py`, environ 8 minutes, refait tout depuis zéro) :
+- quatre fiches recalculées par la chaîne actuelle : L + V à l'optimum de la V1 (F001, 0,277 kg/kN) et trois
+  variantes à poche tirées de l'ESO (F002 à F004 : 0,274, 0,285 et 0,43 kg/kN, la dernière non tenue) ; leurs
+  comptes rendus sont dans `apprentissage/comptes_rendus/` ;
+- huit leçons avec leur provenance : constats des phases 2 à 4 notés comme tels (faits avant le carnet, ou avant
+  l'exclusion des extrémités de jonction), constats lus dans les fiches, comparaisons dont Gabarit lit lui-même
+  les valeurs. La plus utile : sur L + V, c'est la zone d'introduction de l'effort qui fixe l'effort tenu ;
+- une expérience prévue, E001, que le premier cycle réalisera : prolonger le haut de la diagonale par une patte
+  pliée à plat sous le dessus, sous l'axe de la charge, pour étaler l'effort de l'appui (prédiction écrite
+  d'avance : kg/kN en baisse d'au moins 3 %).
+
+Ses statistiques donnent déjà le bruit du maillage : d'un concept à l'autre, le décalage du kg/kN entre 8 et
+6 mm varie de 4,4 % (écart-type sur les quatre fiches), si bien que deux concepts à moins d'environ 13 % l'un de
+l'autre peuvent s'inverser d'une maille à l'autre. C'est la raison de la règle des deux mailles ci-dessus.
+
+Tests hors ligne (sans CalculiX, sans clé ni réseau) : `python tests/tester_apprentissage.py` (statistiques
+comparées à SciPy, verdicts, réponses d'IA piégées, faux serveurs Claude et modèle ouvert, boucle complète avec
+des doublures des étapes coûteuses) et `python tests/tester_topologie.py`.
+
 ## Le logiciel (`gabarit/app/`)
 
 Application locale : elle tourne sur le PC (calculs compris) et s'affiche dans le navigateur.
@@ -197,6 +361,7 @@ n'est visible que depuis ce PC ; `--reseau` l'ouvre aux autres appareils du rés
 | 2. Concepts | Liste des concepts (écrits à la main ou par l'IA), maquette 3D au point central ou sur un tirage aléatoire, variables, justifications, bouton « Vérifier » (géométrie + calcul rapide), lancement de l'IA Concepteur (Claude ou modèle ouvert) avec une consigne libre |
 | 3. Optimisation | Choix du concept et du budget, suivi en direct (nuage des essais, meilleur résultat), arrêt ; une étude existante est reprise |
 | 4. Résultats | Comparaison des concepts, optimum en 3D, vérification à 6 et 4 mm, valeurs des variables, Von Mises, bouton « Télécharger le STEP » |
+| 5. Apprentissage | Lancer des cycles d'apprentissage (Claude ou modèle ouvert, IA Analyste au choix), suivre le carnet : fiches des concepts mesurés, leçons et leur statut, expériences et verdicts, statistiques |
 
 La clé API (icône clé) reste sur le PC (`~/.gabarit/config.json` si on choisit de la mémoriser).
 Les calculs longs tournent dans des processus séparés : Gmsh et CalculiX ne supportent pas les fils

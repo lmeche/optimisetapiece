@@ -3,7 +3,8 @@
 Les variables du concept deviennent des paramètres Optuna :
   epaisseur -> choix parmi les épaisseurs de l'atelier ; choix -> choix ; reel -> réel borné ;
   fraction -> réel dans [0, 1] ; retour -> interrupteur (avec / sans) + fraction de hauteur entre
-  l'aile minimale de pliage de sa tôle et son maximum.
+  l'aile minimale de pliage de sa tôle et son maximum ; evidement -> interrupteur (avec / sans) + fraction
+  de marge entre la bande minimale de sa tôle (max(2 t, 10 mm)) et son maximum.
 Objectif et contraintes identiques à l'étude de l'équerre en U (masse / effort tenu ; plastification,
 flambement >= 3, vis M10 8.8, géométrie valide).
 """
@@ -16,6 +17,7 @@ from functools import partial
 from pathlib import Path
 
 from gabarit.cahier_des_charges import CahierDesCharges
+from gabarit.concepts.evidements import ligament_min
 from gabarit.concepts.format import ConceptJSON, evaluer_expr, vé_et_aile
 from gabarit.evaluation import evaluer
 from gabarit.optimisation import Bornes
@@ -43,7 +45,7 @@ class EtudeConcept:
                 b.append(Bornes(nom, s["min"], s["max"]))
             elif s["type"] == "fraction":
                 b.append(Bornes(nom, 0.0, 1.0))
-            elif s["type"] == "retour":
+            elif s["type"] in ("retour", "evidement"):
                 b.append(Bornes(f"{nom}_u", 0.0, 1.0))
         return b
 
@@ -53,6 +55,7 @@ def proposer_valeurs(definition: dict, cdc: CahierDesCharges, trial) -> dict:
     suggest_categorical et suggest_float)."""
     v = {}
     retours = {}
+    evidements = {}
     for nom, s in definition["variables"].items():
         ty = s["type"]
         if ty == "epaisseur":
@@ -66,10 +69,15 @@ def proposer_valeurs(definition: dict, cdc: CahierDesCharges, trial) -> dict:
         elif ty == "retour":
             retours[nom] = (trial.suggest_categorical(f"{nom}_actif", [False, True]),
                             trial.suggest_float(f"{nom}_u", 0.0, 1.0))
+        elif ty == "evidement":
+            evidements[nom] = (trial.suggest_categorical(f"{nom}_actif", [False, True]),
+                               trial.suggest_float(f"{nom}_u", 0.0, 1.0))
         else:
             raise ValueError(f"type de variable inconnu : {ty}")
     for nom, (actif, u) in retours.items():
         v[nom] = hauteur_retour(definition, cdc, nom, actif, u, v)
+    for nom, (actif, u) in evidements.items():
+        v[nom] = marge_evidement(definition, nom, actif, u, v)
     return v
 
 
@@ -83,6 +91,48 @@ def hauteur_retour(definition: dict, cdc: CahierDesCharges, nom: str, actif: boo
     t = evaluer_expr(tole["epaisseur"], valeurs)
     _, aile = vé_et_aile(t, cdc.procede.ves_disponibles)
     return round(aile + u * max(0.0, s["max"] - aile), 2)
+
+
+def marge_evidement(definition: dict, nom: str, actif: bool, u: float, valeurs: dict) -> float:
+    """0 si l'évidement est absent, sinon une marge entre la bande minimale de sa tôle et son maximum."""
+    if not actif:
+        return 0.0
+    s = definition["variables"][nom]
+    tole = next(t for t in definition["toles"] if t["nom"] == s["tole"])
+    bas = ligament_min(evaluer_expr(tole["epaisseur"], valeurs))
+    return round(bas + u * max(0.0, s["max"] - bas), 2)
+
+
+def parametres_depuis_valeurs(definition: dict, cdc: CahierDesCharges, valeurs: dict) -> dict:
+    """Paramètres Optuna qui redonnent ces valeurs (inverse de `proposer_valeurs`), pour démarrer une étude depuis
+    un point connu, par exemple l'optimum d'un concept parent. Une variable absente des valeurs ou hors de son
+    domaine est laissée au tirage de l'échantillonneur."""
+    p: dict = {}
+    for nom, s in definition["variables"].items():
+        if nom not in valeurs:
+            continue
+        v, ty = valeurs[nom], s["type"]
+        if ty in ("epaisseur", "choix"):
+            choix = cdc.procede.epaisseurs_disponibles if ty == "epaisseur" else s["valeurs"]
+            egal = [c for c in choix if c == v or (isinstance(c, (int, float)) and isinstance(v, (int, float))
+                                                   and not isinstance(c, bool) and abs(c - v) < 1e-9)]
+            if egal:
+                p[nom] = egal[0]
+        elif ty == "reel" and s["min"] <= v <= s["max"]:
+            p[nom] = float(v)
+        elif ty == "fraction" and 0.0 <= v <= 1.0:
+            p[nom] = float(v)
+        elif ty in ("retour", "evidement"):
+            tole = next(t for t in definition["toles"] if t["nom"] == s["tole"])
+            try:
+                t = evaluer_expr(tole["epaisseur"], valeurs)
+            except Exception:  # épaisseur exprimée avec une variable absente : laissée au tirage
+                continue
+            bas = vé_et_aile(t, cdc.procede.ves_disponibles)[1] if ty == "retour" else ligament_min(t)
+            actif = v > 0
+            p[f"{nom}_actif"] = actif
+            p[f"{nom}_u"] = min(1.0, max(0.0, (v - bas) / (s["max"] - bas))) if actif and s["max"] > bas else 0.5
+    return p
 
 
 def evaluer_concept(chemin_concept: str, chemin_cdc: str, valeurs: dict,

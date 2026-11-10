@@ -97,7 +97,9 @@ def rapport(study, etude: EtudeConcept, sortie: Path, chemin: Path) -> None:
 
 def _geometrie(chemin, valeurs, etude) -> dict:
     c = ConceptJSON.charger(chemin, valeurs, etude.cdc)
-    return {f.id: {"epaisseur": f.t, "points": f.points.round(2).tolist()} for f in c.geometrie().faces}
+    return {f.id: {"epaisseur": f.t, "points": f.points.round(2).tolist(),
+                   **({"trous": [t.round(2).tolist() for t in f.trous]} if f.trous else {})}
+            for f in c.geometrie().faces}
 
 
 def trace_nuage(study, best, chemin: Path, titre: str, faisable_trouve: bool = True) -> None:

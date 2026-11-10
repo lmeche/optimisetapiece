@@ -21,16 +21,25 @@ def figure_faces(faces: list[dict], x_face: float = 20.0, x_charge: float | None
     for f in faces:
         p = np.asarray(f["points"], float)
         n = len(p)
+        trous = [np.asarray(t, float) for t in f.get("trous") or []]
         coul = COULEURS[toles.index(f["tole"]) % len(COULEURS)]
         nom = f"Tôle {f['tole']} ({f['t']:g} mm)"
-        fig.add_trace(go.Mesh3d(x=p[:, 0], y=p[:, 1], z=p[:, 2], i=[0] * (n - 2), j=list(range(1, n - 1)),
-                                k=list(range(2, n)), color=coul, opacity=0.85, flatshading=True, name=nom,
+        if trous:  # face percée : triangulation qui respecte les évidements
+            from gabarit.concepts.evidements import triangles_avec_trous
+            sommets, tri = triangles_avec_trous(p, _normale(p), trous)
+            maille = {"x": sommets[:, 0], "y": sommets[:, 1], "z": sommets[:, 2], "i": tri[:, 0], "j": tri[:, 1],
+                      "k": tri[:, 2]}
+        else:
+            maille = {"x": p[:, 0], "y": p[:, 1], "z": p[:, 2], "i": [0] * (n - 2), "j": list(range(1, n - 1)),
+                      "k": list(range(2, n))}
+        fig.add_trace(go.Mesh3d(**maille, color=coul, opacity=0.85, flatshading=True, name=nom,
                                 legendgroup=f["tole"], showlegend=f["tole"] not in deja,
                                 hovertext=f"{f['id']} : {f['t']:g} mm", hoverinfo="text"))
         deja.add(f["tole"])
-        bord = np.vstack([p, p[:1]])
-        fig.add_trace(go.Scatter3d(x=bord[:, 0], y=bord[:, 1], z=bord[:, 2], mode="lines",
-                                   line={"color": "#1d1d1f", "width": 2}, hoverinfo="skip", showlegend=False))
+        for contour in [p, *trous]:
+            bord = np.vstack([contour, contour[:1]])
+            fig.add_trace(go.Scatter3d(x=bord[:, 0], y=bord[:, 1], z=bord[:, 2], mode="lines",
+                                       line={"color": "#1d1d1f", "width": 2}, hoverinfo="skip", showlegend=False))
     # face du socle et appui
     zmin, zmax = 0.0, max(200.0, float(pts_tous[:, 2].max()) + 10)
     fig.add_trace(go.Mesh3d(x=[x_face] * 4, y=[-80, 80, 80, -80], z=[zmin, zmin, zmax, zmax], i=[0, 0], j=[1, 2],
@@ -50,12 +59,22 @@ def figure_faces(faces: list[dict], x_face: float = 20.0, x_charge: float | None
     return fig
 
 
+def _normale(p: np.ndarray) -> np.ndarray:
+    n = np.zeros(3)
+    for i in range(len(p)):  # méthode de Newell
+        a, b = p[i], p[(i + 1) % len(p)]
+        n += np.array([(a[1] - b[1]) * (a[2] + b[2]), (a[2] - b[2]) * (a[0] + b[0]), (a[0] - b[0]) * (a[1] + b[1])])
+    return n / (np.linalg.norm(n) or 1)
+
+
 def faces_du_concept(concept) -> list[dict]:
-    return [{"id": f.id, "tole": f.tole, "t": f.t, "points": f.points.tolist()} for f in concept.geometrie().faces]
+    return [{"id": f.id, "tole": f.tole, "t": f.t, "points": f.points.tolist(),
+             "trous": [np.asarray(t).tolist() for t in f.trous]} for f in concept.geometrie().faces]
 
 
 def faces_de_synthese(geometrie: dict) -> list[dict]:
-    return [{"id": k, "tole": k.split(".")[0], "t": v["epaisseur"], "points": v["points"]} for k, v in geometrie.items()]
+    return [{"id": k, "tole": k.split(".")[0], "t": v["epaisseur"], "points": v["points"], "trous": v.get("trous", [])}
+            for k, v in geometrie.items()]
 
 
 def figure_grille(cdc) -> go.Figure:
