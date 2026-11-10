@@ -103,6 +103,38 @@ def marge_evidement(definition: dict, nom: str, actif: bool, u: float, valeurs: 
     return round(bas + u * max(0.0, s["max"] - bas), 2)
 
 
+def parametres_depuis_valeurs(definition: dict, cdc: CahierDesCharges, valeurs: dict) -> dict:
+    """Paramètres Optuna qui redonnent ces valeurs (inverse de `proposer_valeurs`), pour démarrer une étude depuis
+    un point connu, par exemple l'optimum d'un concept parent. Une variable absente des valeurs ou hors de son
+    domaine est laissée au tirage de l'échantillonneur."""
+    p: dict = {}
+    for nom, s in definition["variables"].items():
+        if nom not in valeurs:
+            continue
+        v, ty = valeurs[nom], s["type"]
+        if ty in ("epaisseur", "choix"):
+            choix = cdc.procede.epaisseurs_disponibles if ty == "epaisseur" else s["valeurs"]
+            egal = [c for c in choix if c == v or (isinstance(c, (int, float)) and isinstance(v, (int, float))
+                                                   and not isinstance(c, bool) and abs(c - v) < 1e-9)]
+            if egal:
+                p[nom] = egal[0]
+        elif ty == "reel" and s["min"] <= v <= s["max"]:
+            p[nom] = float(v)
+        elif ty == "fraction" and 0.0 <= v <= 1.0:
+            p[nom] = float(v)
+        elif ty in ("retour", "evidement"):
+            tole = next(t for t in definition["toles"] if t["nom"] == s["tole"])
+            try:
+                t = evaluer_expr(tole["epaisseur"], valeurs)
+            except Exception:  # épaisseur exprimée avec une variable absente : laissée au tirage
+                continue
+            bas = vé_et_aile(t, cdc.procede.ves_disponibles)[1] if ty == "retour" else ligament_min(t)
+            actif = v > 0
+            p[f"{nom}_actif"] = actif
+            p[f"{nom}_u"] = min(1.0, max(0.0, (v - bas) / (s["max"] - bas))) if actif and s["max"] > bas else 0.5
+    return p
+
+
 def evaluer_concept(chemin_concept: str, chemin_cdc: str, valeurs: dict,
                     taille: float = TAILLE_EXPLORATION) -> tuple[float, list[float], dict]:
     os.environ.setdefault("GABARIT_THREADS", "1")

@@ -86,10 +86,14 @@ def _executer(study, proposer, evaluer, lots, n_paralleles, journal):
 def optimiser(proposer: Proposer, evaluer: Evaluateur, n_initial: int = 16, n_bayes: int = 48,
               affinage: list[Bornes] | None = None, n_affinage: int = 24, n_paralleles: int = 4,
               stockage: str | None = None, nom: str = "etude", graine: int = 0,
-              journal: Callable[[optuna.trial.FrozenTrial], None] | None = None) -> optuna.Study:
+              journal: Callable[[optuna.trial.FrozenTrial], None] | None = None,
+              depart: list[dict] | None = None) -> optuna.Study:
+    """depart : paramètres imposés aux premiers essais du plan initial (point connu, optimum d'un parent) ;
+    les paramètres qu'ils ne donnent pas sont tirés par l'échantillonneur."""
     study = optuna.create_study(study_name=nom, storage=stockage, load_if_exists=True, direction="minimize",
                                 sampler=optuna.samplers.QMCSampler(qmc_type="sobol", scramble=True, seed=graine))
-    _executer(study, proposer, evaluer, [None] * n_initial, n_paralleles, journal)
+    depart = list(depart or [])[:n_initial]
+    _executer(study, proposer, evaluer, depart + [None] * (n_initial - len(depart)), n_paralleles, journal)
 
     study.sampler = optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True, seed=graine)
     _executer(study, proposer, evaluer, [None] * n_bayes, n_paralleles, journal)
@@ -99,18 +103,32 @@ def optimiser(proposer: Proposer, evaluer: Evaluateur, n_initial: int = 16, n_ba
     return study
 
 
+class _BudgetEpuise(Exception):
+    pass
+
+
 def _affiner(study, proposer, evaluer, variables: list[Bornes], budget: int, n_paralleles: int, journal):
     """COBYLA en variables normalisées [0, 1] depuis le meilleur point faisable ; chaque évaluation est un
-    essai de l'étude (traçabilité). Les variables discrètes gardent la valeur du meilleur point."""
+    essai de l'étude (traçabilité). Les variables discrètes gardent la valeur du meilleur point.
+    Le budget compte les calculs nouveaux : le point de départ, déjà calculé, n'est pas refait, et COBYLA est
+    arrêté au budget même s'il en demande davantage (il exige au moins n + 2 évaluations)."""
     best = meilleur_faisable(study)
-    if best is None:
+    if best is None or budget <= 0:
         return
     base = dict(best.params)
     cache: dict[tuple, optuna.trial.FrozenTrial] = {}
+    u0 = np.array([(base[v.nom] - v.bas) / (v.haut - v.bas) for v in variables])
+    if np.all((u0 >= 0) & (u0 <= 1)):
+        cache[tuple(np.round(u0, 6))] = best
+    nouveaux = 0
 
     def essai(u):
+        nonlocal nouveaux
         cle = tuple(np.round(u, 6))
         if cle not in cache:
+            if nouveaux >= budget:
+                raise _BudgetEpuise
+            nouveaux += 1
             p = dict(base)
             for v, ui in zip(variables, np.clip(u, 0, 1)):
                 p[v.nom] = v.bas + float(ui) * (v.haut - v.bas)
@@ -129,7 +147,9 @@ def _affiner(study, proposer, evaluer, variables: list[Bornes], budget: int, n_p
     n_c = len(_contraintes(best))
     bornes = [{"type": "ineq", "fun": (lambda u, k=k: u[k])} for k in range(len(variables))]
     bornes += [{"type": "ineq", "fun": (lambda u, k=k: 1 - u[k])} for k in range(len(variables))]
-    u0 = np.array([(base[v.nom] - v.bas) / (v.haut - v.bas) for v in variables])
-    minimize(valeur, u0, method="COBYLA",
-             constraints=[{"type": "ineq", "fun": contrainte(i)} for i in range(n_c)] + bornes,
-             options={"rhobeg": 0.1, "maxiter": budget, "tol": 1e-3})
+    try:
+        minimize(valeur, u0, method="COBYLA",
+                 constraints=[{"type": "ineq", "fun": contrainte(i)} for i in range(n_c)] + bornes,
+                 options={"rhobeg": 0.1, "maxiter": max(budget + 1, len(variables) + 2), "tol": 1e-3})
+    except _BudgetEpuise:
+        pass
