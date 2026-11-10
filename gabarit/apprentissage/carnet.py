@@ -9,7 +9,10 @@ Trois sortes d'entrées, dans un fichier JSON lisible (apprentissage/carnet.json
   va chercher les valeurs et dit si elles vont dans le sens annoncé ;
 - expériences : une modification d'un concept parent, avec sa prédiction écrite AVANT le calcul (grandeur,
   sens, seuil). Une fois l'enfant mesuré, Gabarit tranche : confirmée, contredite ou non concluante (écart
-  sous le seuil, de l'ordre du bruit du maillage et de l'optimiseur).
+  sous le seuil, de l'ordre du bruit du maillage et de l'optimiseur) ;
+- prédictions physiques : ce qu'une IA annonce d'un concept avant son calcul (kg/kN, mode de ruine, principes
+  de gabarit/savoir cités). Au calcul de la fiche, Gabarit dit si elle est juste, partielle ou fausse, et tient
+  pour chaque principe le compte de ses prédictions (calibration : part de justes, biais de l'écart).
 
 Statut d'une leçon, tiré de ses preuves :
 - hypothese : proposée, rien ne l'étaye encore ;
@@ -30,6 +33,7 @@ from pathlib import Path
 import numpy as np
 
 from gabarit.apprentissage import statistiques as st
+from gabarit.savoir import prediction as sp
 
 RACINE = Path(__file__).resolve().parents[2]
 CARNET_DEFAUT = RACINE / "apprentissage" / "carnet.json"
@@ -190,6 +194,44 @@ class Experience:
         return t
 
 
+@dataclass
+class Prediction:
+    id: str
+    concept: str  # fichier du concept (chemin relatif à la racine du dépôt si possible)
+    nom: str
+    kg_par_kN: float
+    mode_limite: str
+    principes: list[str] = field(default_factory=list)
+    face_critique: str = ""  # face prédite pour le point critique (facultatif)
+    h_mm: float | None = None
+    effort_tenu_kN: float | None = None
+    raisonnement: str = ""
+    source: str = ""
+    experience: str | None = None
+    statut: str = "a_verifier"  # a_verifier, verifiee, abandonnee
+    fiche: str | None = None
+    verdict: str = ""  # juste, partielle, fausse
+    mesure: dict = field(default_factory=dict)  # kg_par_kN, mode_limite, ecart_pct, valeur_juste, mode_juste,
+    # face_critique et lieu_juste si une face était prédite, note
+    erreurs: list[str] = field(default_factory=list)  # ce qui était illisible dans la prédiction de l'IA
+    creee: str = field(default_factory=_maintenant)
+
+    def texte(self) -> str:
+        t = (f"{self.id} ({self.nom}{', ' + ', '.join(self.principes) if self.principes else ''}) : prédit "
+             f"{_nombre(self.kg_par_kN, 3)} kg/kN, limite {self.mode_limite or '?'}"
+             + (f", point critique sur {self.face_critique}" if self.face_critique else ""))
+        if self.statut == "verifiee":
+            m = self.mesure
+            ecart = m.get("ecart_pct")
+            t += (f" -> {self.fiche} : {_nombre(m.get('kg_par_kN'), 3)} kg/kN, limite {m.get('mode_limite') or '?'}"
+                  + (f", point critique sur {m.get('face_critique') or '?'} (lieu {'juste' if m.get('lieu_juste') else 'faux'})"
+                     if "lieu_juste" in m else "")
+                  + f" (écart {'-' if ecart is None else f'{ecart:+.0f} %'}), {self.verdict}")
+        elif self.statut == "abandonnee":
+            t += f" -> non vérifiée ({self.mesure.get('note') or 'pas de fiche mesurable'})"
+        return t
+
+
 def valeur(fiche: Fiche, grandeur: str) -> float:
     """Valeur d'une grandeur dans une fiche : mesure, décomposition ou « face:<id>:<métrique> »."""
     if grandeur.startswith("face:"):
@@ -240,6 +282,7 @@ class Carnet:
         self.fiches: list[Fiche] = []
         self.lecons: list[Lecon] = []
         self.experiences: list[Experience] = []
+        self.predictions: list[Prediction] = []
         self.journal: list[dict] = []
         self.cycles = 0  # cycles de la boucle d'apprentissage déjà faits (rythme de l'exploration)
 
@@ -257,6 +300,7 @@ class Carnet:
             x["preuves"] = [Preuve(**_garder(Preuve, p)) for p in x.get("preuves", [])]
             c.lecons.append(Lecon(**x))
         c.experiences = [Experience(**_garder(Experience, e)) for e in d.get("experiences", [])]
+        c.predictions = [Prediction(**_garder(Prediction, p)) for p in d.get("predictions", [])]
         c.journal = list(d.get("journal", []))
         c.cycles = int(d.get("cycles", 0))
         return c
@@ -266,7 +310,7 @@ class Carnet:
         self.chemin.parent.mkdir(parents=True, exist_ok=True)
         d = {"version": 1, "cycles": self.cycles, "fiches": [asdict(f) for f in self.fiches],
              "lecons": [asdict(x) for x in self.lecons], "experiences": [asdict(e) for e in self.experiences],
-             "journal": self.journal[-500:]}
+             "predictions": [asdict(p) for p in self.predictions], "journal": self.journal[-500:]}
         for chemin, texte in ((self.chemin, json.dumps(d, indent=1, ensure_ascii=False, default=_json) + "\n"),
                               (self.chemin.with_suffix(".md"), self.texte())):
             tmp = chemin.with_name(chemin.name + ".tmp")
@@ -286,6 +330,9 @@ class Carnet:
 
     def experience(self, ident: str) -> Experience:
         return next(e for e in self.experiences if e.id == ident)
+
+    def prediction(self, ident: str) -> Prediction:
+        return next(p for p in self.predictions if p.id == ident)
 
     def a_fiche(self, ident: str) -> bool:
         return any(f.id == ident for f in self.fiches)
@@ -359,6 +406,79 @@ class Carnet:
         self.experiences.append(e)
         self.noter(f"expérience {e.id} prévue : {e.texte()}")
         return e
+
+    def ajouter_prediction(self, p: dict, concept: str | Path = "", nom: str = "", source: str = "",
+                           experience: str | None = None, erreurs: list[str] | None = None) -> Prediction:
+        """Prédiction physique lue par gabarit.savoir.prediction.lire, enregistrée AVANT le calcul du concept."""
+        if not (isinstance(p.get("kg_par_kN"), (int, float)) and p["kg_par_kN"] > 0):
+            raise ValueError("prédiction sans kg/kN")
+        x = Prediction(self._id("PR", self.predictions), _relatif(concept), nom or Path(str(concept)).stem,
+                       float(p["kg_par_kN"]), str(p.get("mode_limite") or ""), list(p.get("principes") or []),
+                       str(p.get("face_critique") or ""), p.get("h_mm"), p.get("effort_tenu_kN"),
+                       str(p.get("raisonnement") or ""), source, experience, erreurs=list(erreurs or []))
+        self.predictions.append(x)
+        self.noter(f"prédiction {x.id} enregistrée avant le calcul : {x.texte()}")
+        return x
+
+    def conclure_prediction(self, ident: str, fiche: str | None, note: str = "") -> Prediction:
+        """Verdict d'une prédiction face à la fiche du concept (gabarit.savoir.prediction.juger). Une fiche sans
+        mesures (concept non construit ou non calculé) laisse la prédiction non vérifiée : ce n'est pas un résultat
+        physique."""
+        x = self.prediction(ident)
+        x.fiche = fiche
+        f = self.fiche(fiche) if fiche and self.a_fiche(fiche) else None
+        if f is None or not f.mesures:
+            x.statut, x.verdict = "abandonnee", ""
+            x.mesure = {"note": note or ("; ".join(f.erreurs[:2]) if f else "aucune fiche mesurable")}
+            self.noter(f"prédiction {x.id} non vérifiée : {x.mesure['note']}")
+            return x
+        x.statut = "verifiee"
+        x.verdict, mesure = sp.juger(x.kg_par_kN, x.mode_limite, valeur(f, "kg_par_kN"), sp.mode_de_limite(f.limite),
+                                     face_predite=x.face_critique, face_mesuree=str(f.point_critique.get("face", "")))
+        x.mesure = {k: (_propre(v) if isinstance(v, float) else v) for k, v in mesure.items()}
+        if note:
+            x.mesure["note"] = note
+        self.noter(f"prédiction {x.id} : {x.texte()}")
+        return x
+
+    def calibration(self) -> dict:
+        """Pour chaque principe cité (et pour l'ensemble, clé « toutes ») : nombre de prédictions vérifiées, de
+        justes, de modes justes, écart moyen signé (biais : > 0 si l'IA prévoit trop lourd) et moyen absolu (%)."""
+        faites = [p for p in self.predictions if p.statut == "verifiee"]
+        groupes = {"toutes": faites}
+        for p in faites:
+            for i in p.principes:
+                groupes.setdefault(i, []).append(p)
+        sortie = {}
+        for cle, ps in groupes.items():
+            ecarts = [p.mesure.get("ecart_pct") for p in ps]
+            ecarts = [e for e in ecarts if isinstance(e, (int, float)) and math.isfinite(e)]
+            sortie[cle] = {"n": len(ps), "justes": sum(p.verdict == "juste" for p in ps),
+                           "partielles": sum(p.verdict == "partielle" for p in ps),
+                           "modes_justes": sum(bool(p.mesure.get("mode_juste")) for p in ps),
+                           "lieux_predits": sum("lieu_juste" in p.mesure for p in ps),
+                           "lieux_justes": sum(bool(p.mesure.get("lieu_juste")) for p in ps),
+                           "ecart_moyen_pct": float(np.mean(ecarts)) if ecarts else math.nan,
+                           "ecart_abs_moyen_pct": float(np.mean(np.abs(ecarts))) if ecarts else math.nan}
+        return sortie
+
+    def texte_calibration(self) -> list[str]:
+        cal = self.calibration()
+        if not cal["toutes"]["n"]:
+            return []
+
+        def ligne(nom: str, c: dict) -> str:
+            return (f"{nom} : {c['n']} prédiction(s) vérifiée(s), {c['justes']} juste(s), {c['partielles']} "
+                    f"partielle(s), mode juste {c['modes_justes']}/{c['n']}"
+                    + (f", lieu juste {c['lieux_justes']}/{c['lieux_predits']}" if c["lieux_predits"] else "")
+                    + f", écart moyen {_signe(c['ecart_moyen_pct'])} (absolu {_nombre(c['ecart_abs_moyen_pct'], 0)} %)")
+
+        from gabarit.savoir.principes import principe
+
+        lignes = [ligne("Toutes", cal["toutes"])]
+        for cle in sorted((k for k in cal if k != "toutes"), key=lambda k: int(k[1:])):
+            lignes.append(ligne(f"{cle} ({principe(cle).titre})", cal[cle]))
+        return lignes
 
     def preuve_comparaison(self, lecon: Lecon, a: str, b: str, grandeur: str, attendu: str, note: str = "") -> Preuve:
         """Comparaison entre deux fiches : Gabarit lit les deux valeurs et dit si elles vont dans le sens annoncé
@@ -593,6 +713,12 @@ class Carnet:
         if a_faire and not compact:
             lignes.append("\n### Expériences proposées, pas encore faites")
             lignes += [f"- {e.texte()}" for e in a_faire[:5]]
+        calib = self.texte_calibration()
+        if calib:
+            lignes.append(f"\n### Prédictions physiques vérifiées par le calcul (tolérance {sp.TOLERANCE_PCT:g} % sur le kg/kN)")
+            lignes += [f"- {t}" for t in (calib[:1] if compact else calib)]
+            if not compact:
+                lignes += [f"- {p.texte()}" for p in [p for p in self.predictions if p.statut == "verifiee"][-4:]]
         stats = self.texte_statistiques() if not compact else []
         if stats:
             lignes.append("\n### Statistiques (calculées par Gabarit sur toutes les fiches)")
@@ -602,7 +728,8 @@ class Carnet:
     def texte(self) -> str:
         """Le carnet en entier, pour un humain (markdown)."""
         lignes = ["# Carnet d'apprentissage de Gabarit", "",
-                  f"{len(self.fiches)} fiche(s), {len(self.lecons)} leçon(s), {len(self.experiences)} expérience(s).", "",
+                  (f"{len(self.fiches)} fiche(s), {len(self.lecons)} leçon(s), {len(self.experiences)} expérience(s)"
+                   + (f", {len(self.predictions)} prédiction(s) physique(s)" if self.predictions else "") + "."), "",
                   "## Concepts mesurés", "",
                   "| Fiche | Concept | Faisable | kg/kN | Masse (kg) | Effort tenu (kN) | L_eq (mm) | eta | Flexion | Flambement | Limite | Parent |",
                   "|---|---|---|---|---|---|---|---|---|---|---|---|"]
@@ -621,6 +748,14 @@ class Carnet:
             lignes += [f"  - {texte_preuve(p)}" for p in x.preuves]
         if self.experiences:
             lignes += ["", "## Expériences", ""] + [f"- {e.texte()}" for e in self.experiences]
+        if self.predictions:
+            lignes += ["", "## Prédictions physiques", "",
+                       (f"Écrites avant le calcul ; juste = kg/kN à {sp.TOLERANCE_PCT:g} % près et bon mode de ruine "
+                        "(le lieu du point critique, s'il est prédit, est jugé à part)."), ""]
+            lignes += [f"- {p.texte()}" for p in self.predictions]
+            calib = self.texte_calibration()
+            if calib:
+                lignes += ["", "Calibration des principes :", ""] + [f"- {t}" for t in calib]
         s = self.statistiques()
         lignes += ["", f"## Statistiques ({s['n']} concept(s) faisable(s))", ""]
         lignes += [f"- {t}" for t in self.texte_statistiques()]
@@ -704,6 +839,10 @@ def _nombre(x, n: int) -> str:
     except (TypeError, ValueError):
         return "-"
     return f"{x:.{n}f}" if math.isfinite(x) else "-"
+
+
+def _signe(x) -> str:
+    return f"{x:+.0f} %" if isinstance(x, (int, float)) and math.isfinite(x) else "-"
 
 
 def _relatif(chemin) -> str:

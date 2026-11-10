@@ -1,6 +1,6 @@
 # Carnet d'apprentissage de Gabarit
 
-4 fiche(s), 8 leçon(s), 1 expérience(s).
+6 fiche(s), 9 leçon(s), 4 expérience(s), 2 prédiction(s) physique(s).
 
 ## Concepts mesurés
 
@@ -10,6 +10,8 @@
 | F001 | L + V (idée d'Iwan) | oui | 0.2767 | 4.376 | 15.82 | 1852 | 0.224 | 22 % | 3.04 | le flambement | - |
 | F003 | L + V, poche de 46 cm² au milieu du dessus (ESO 15 %, 6 mm) | oui | 0.2849 | 4.195 | 14.72 | 1867 | 0.219 | 24 % | 3.02 | le flambement | F001 |
 | F004 | L + V, poche de 99 cm² dans le dessus (ESO 30 %, 6 mm) | non | 0.4276 | 3.987 | 9.33 | 1895 | 0.148 | 23 % | 3.02 | la plastification (contrainte au point critique), NON TENU (marge x0.95) | F001 |
+| F006 | L + V, diagonale en U de 3 mm (ailes de 20 mm) | non | 0.4761 | 4.007 | 8.42 | 1854 | 0.130 | 18 % | 9.36 | la plastification (contrainte au point critique), NON TENU (marge x0.86) | F001 |
+| F005 | L + V, diagonale en U de 2 mm (ailes de 20 mm) | non | 0.5335 | 3.571 | 6.69 | 1885 | 0.118 | 17 % | 3.43 | la plastification (contrainte au point critique), NON TENU (marge x0.68) | F001 |
 
 ## Leçons
 
@@ -25,21 +27,43 @@
   - observation (F001), conforme : fiche F001 à 6 mm : marges plastification 1,61, flambement 1,01, vis 3,05 ; mode V.diag 100 %, L.dessus 18 %
 - **L006** (observee, Gabarit (fiche F001)) : Dans L + V, la jambe doublée contre le dos et le dos lui-même travaillent peu : 98 % et 75 % de leur surface sous 20 % de la contrainte utile, 22 % de la masse à eux deux. *Mécanisme* : Le dos ne transmet l'effort qu'entre le pli du dessus, les vis et le pied de la jambe ; la jambe doublée double une matière déjà peu chargée. *Portée* : L + V ; à vérifier sur les concepts à doublage. *Preuves* : 1 observation(s) écrite(s) à la main (1 dans son sens).
   - observation (F001), conforme : fiche F001 à 6 mm : V.jambe 9 % de la masse, eta 0,08 ; L.dos 13 % de la masse, eta 0,10. Les zones protégées (vis, plis, soudures, bande de bord) n'y laissent rien à évider pour l'ESO
-- **L007** (observee, Gabarit (fiche F001)) : Sur L + V, c'est la zone d'introduction de l'effort qui fixe l'effort tenu : 146 MPa au bout du dessus, à 30 mm de l'axe de la charge, et autant dans la diagonale juste sous l'appui, contre 111 MPa au plus au-delà de 50 mm de cet axe (96 MPa dans le dos). Étaler l'effort sous l'appui est le premier levier ; alléger loin de l'appui ne paie que si cela ne fait pas monter cette zone. *Mécanisme* : L'effort de 9,8 kN entre par le disque Ø50 de l'adaptateur, à 5 mm du bout libre du dessus et juste au-dessus de la soudure de la diagonale : le dessus fléchit localement autour de l'appui et la diagonale reçoit l'effort sur une courte longueur de soudure. *Portée* : Tous les concepts : chaque compte rendu dit à quelle distance de l'axe de la charge est le point critique et ce que vaut la contrainte au-delà de 50 mm. *Preuves* : 2 observation(s) écrite(s) à la main (1 dans son sens, 1 non jugée(s)).
+- **L007** (observee, Gabarit (fiche F001)) : Sur L + V, c'est la zone d'introduction de l'effort qui fixe l'effort tenu : 146 MPa au bout du dessus, à 30 mm de l'axe de la charge, et autant dans la diagonale juste sous l'appui, contre 111 MPa au plus au-delà de 50 mm de cet axe (96 MPa dans le dos). Étaler l'effort sous l'appui est le premier levier ; alléger loin de l'appui ne paie que si cela ne fait pas monter cette zone. *Mécanisme* : L'effort de 9,8 kN entre par le disque Ø50 de l'adaptateur, à 5 mm du bout libre du dessus et juste au-dessus de la soudure de la diagonale : le dessus fléchit localement autour de l'appui et la diagonale reçoit l'effort sur une courte longueur de soudure. *Portée* : Tous les concepts : chaque compte rendu dit à quelle distance de l'axe de la charge est le point critique et ce que vaut la contrainte au-delà de 50 mm. *Preuves* : 0 expérience(s) confirmée(s), 0 contredite(s), 2 observation(s) écrite(s) à la main (1 dans son sens, 1 non jugée(s)).
   - observation (F001), conforme : fiche F001 à 6 mm : point critique à 30 mm de l'axe de la charge, x1,31 sur la contrainte du reste de la pièce (diagnostic du compte rendu)
   - observation (F001), non jugée : limite de la mesure : cette contrainte locale dépend de la modélisation de l'appui (efforts égaux sur les noeuds du disque Ø50, disque de 30 mm exclu) et de la maille. Optimum L + V : 138, 146 puis 161 MPa à 8, 6 puis 4 mm (0,2625, 0,2767 puis 0,3057 kg/kN), le pic passant à 4 mm sur la jonction de la diagonale sous l'appui. Les fiches se comparent donc à maille égale
+  - experience F001, F005 : kg_par_kN 0.2767 / 0.5335 (non_concluante) : E002 : Diagonale et jambe en 2 mm au lieu de 5, diagonale pliée en U par deux retours de 20 mm (h_ret_diag = 20), le reste aux valeurs de F001 ; analyse : point critique au pied de la bielle (pli entre V.diag et V.jambe, là où s'arrêtent les retours du U), pas sous l'appui : le kg/kN monte comme prévu, mais pas par le mécanisme de L007. Cette expérience ne teste donc pas L007
+  - experience F001, F006 : kg_par_kN 0.2767 / 0.4761 (non_concluante) : E003 : Diagonale et jambe en 3 mm au lieu de 5, diagonale pliée en U par deux retours de 20 mm (h_ret_diag = 20), le reste aux valeurs de F001 ; analyse : point critique au pied de la bielle (pli entre V.diag et V.jambe, là où s'arrêtent les retours du U), pas sous l'appui : le kg/kN monte comme prévu, mais pas par le mécanisme de L007. Cette expérience ne teste donc pas L007
 - **L008** (observee, Gabarit (fiches F002 à F004, optimisation topologique)) : Sur L + V à son optimum, une poche au milieu du dessus ne fait pas baisser le kg/kN : à 4 % de la masse, l'écart reste dans le bruit car la contrainte utile monte autant que la masse baisse ; à 9 % de la masse, la pièce ne tient plus. *Mécanisme* : Le milieu du dessus, peu contraint, transmet pourtant la traction du dessus vers le dos ; la poche la renvoie dans les bandes latérales et vers la zone d'appui, qui fixe l'effort tenu. *Portée* : Concepts limités par la zone d'appui ou par le flambement ; une poche ne paie que dans une tôle qui ne porte pas le chemin d'effort principal. *Preuves* : 2/4 comparaison(s) dans son sens.
   - comparaison F001, F002 : kg_par_kN 0.2767 / 0.2740 (non_concluante) : poche de 45 cm² de la première ESO : écart sous le seuil, comme l'annonce la leçon
   - comparaison F001, F003 : kg_par_kN 0.2767 / 0.2849 (non_concluante) : poche de 46 cm² (ESO 15 % à 6 mm) : écart sous le seuil, comme l'annonce la leçon
   - comparaison F001, F003 : sigma_utile 145.7639 / 156.5621 (conforme) : la poche de 46 cm² fait monter la contrainte utile
   - comparaison F001, F004 : kg_par_kN 0.2767 / 0.4276 (conforme) : poche de 99 cm² (ESO 30 %) : pièce non tenue
+- **L009** (observee, Claude (analyse des fiches F005 et F006)) : Sur L + V, plier la diagonale en U mince (2 ou 3 mm) supprime son flambement (facteur 3,4 puis 9,4), mais le point critique passe au pied de la bielle, au pli entre la diagonale et la jambe, là où s'arrêtent les retours : 344 MPa en 2 mm, 274 MPa en 3 mm, contre 135 à 146 MPa sous l'appui. Amincir la bielle sans dessiner son pied fait perdre plus d'effort tenu que de masse. *Mécanisme* : La bielle pousse environ 24 kN sous 1 t. À son pied, cette poussée tourne dans un pli vers une jambe aussi mince qu'elle, et les retours du U s'arrêtent au pli : l'effort passe par le coin de l'âme, en flexion locale. *Portée* : Bielles minces pliées dont le pied est un pli vers une autre face. En 5 mm (F001), ce pli tenait. *Preuves* : 2 observation(s) écrite(s) à la main (2 dans son sens).
+  - observation (F005), conforme : fiche F005 (U de 2 mm) : 344 MPa sur V.jambe à 1 mm du pli avec V.diag et d'un bord libre, effort tenu 6,7 kN ; flambement 3,43 (3,53 prévu par predimensionner pour le voilement de l'âme)
+  - observation (F006), conforme : fiche F006 (U de 3 mm) : 274 MPa sur V.diag à 1 mm du pli avec V.jambe et du pli avec V.retour_diag_g, effort tenu 8,4 kN ; flambement 9,36 ; L.dessus culmine à 135 MPa
 
 ## Expériences
 
 - E001 (depuis F001, leçon L007) : Prolonger le haut de la diagonale par une patte pliée à plat sous le dessus, centrée sous l'axe de la charge (x = 320) et soudée contre lui (doublage), pour étaler l'effort de l'appui sur deux épaisseurs et sur toute la largeur de la diagonale ; prédiction : kg/kN en baisse d'au moins 3 %
+- E002 (depuis F001, leçon L007) : Diagonale et jambe en 2 mm au lieu de 5, diagonale pliée en U par deux retours de 20 mm (h_ret_diag = 20), le reste aux valeurs de F001 ; prédiction : kg/kN en hausse d'au moins 3 % -> F005 : 0.2767 -> 0.5335 (+92.8 %), confirmee (enfant non faisable (plastification x0.682) ; verdict tiré de la faisabilité : une pièce qui ne tient pas n'est pas meilleure, quel que soit son kg/kN ; mécanisme : point critique au pied de la bielle (pli entre V.diag et V.jambe, là où s'arrêtent les retours du U), pas sous l'appui : le kg/kN monte comme prévu, mais pas par le mécanisme de L007)
+- E003 (depuis F001, leçon L007) : Diagonale et jambe en 3 mm au lieu de 5, diagonale pliée en U par deux retours de 20 mm (h_ret_diag = 20), le reste aux valeurs de F001 ; prédiction : kg/kN en hausse d'au moins 3 % -> F006 : 0.2767 -> 0.4761 (+72.1 %), confirmee (enfant non faisable (plastification x0.858) ; verdict tiré de la faisabilité : une pièce qui ne tient pas n'est pas meilleure, quel que soit son kg/kN ; mécanisme : point critique au pied de la bielle (pli entre V.diag et V.jambe, là où s'arrêtent les retours du U), pas sous l'appui : le kg/kN monte comme prévu, mais pas par le mécanisme de L007)
+- E004 (depuis F001, leçon L009) : Garder la diagonale en U de 3 mm (t_V = 3, h_ret_diag = 20) et dessiner le pied de la bielle, où F006 casse : retours du U menés jusqu'à la jambe et soudés à elle, ou gousset dans le pli du pied, pour que la poussée entre dans la jambe par toute la section du U et pas par le coin de l'âme ; prédiction : kg/kN en baisse d'au moins 3 %
+
+## Prédictions physiques
+
+Écrites avant le calcul ; juste = kg/kN à 15 % près et bon mode de ruine (le lieu du point critique, s'il est prédit, est jugé à part).
+
+- PR001 (L + V, diagonale en U de 2 mm (ailes de 20 mm), P3, P4, P7) : prédit 0.410 kg/kN, limite plastification -> F005 : 0.534 kg/kN, limite plastification (écart -23 %), partielle
+- PR002 (L + V, diagonale en U de 3 mm (ailes de 20 mm), P3, P4, P7) : prédit 0.300 kg/kN, limite plastification -> F006 : 0.476 kg/kN, limite plastification (écart -37 %), partielle
+
+Calibration des principes :
+
+- Toutes : 2 prédiction(s) vérifiée(s), 0 juste(s), 2 partielle(s), mode juste 2/2, écart moyen -30 % (absolu 30 %)
+- P3 (Comprimé veut dire plié) : 2 prédiction(s) vérifiée(s), 0 juste(s), 2 partielle(s), mode juste 2/2, écart moyen -30 % (absolu 30 %)
+- P4 (Un appui sous la charge) : 2 prédiction(s) vérifiée(s), 0 juste(s), 2 partielle(s), mode juste 2/2, écart moyen -30 % (absolu 30 %)
+- P7 (L'épaisseur suit le mode de ruine) : 2 prédiction(s) vérifiée(s), 0 juste(s), 2 partielle(s), mode juste 2/2, écart moyen -30 % (absolu 30 %)
 
 ## Statistiques (3 concept(s) faisable(s))
 
 - Sur 3 concepts faisables, la variance de ln(kg/kN) vient pour 8 % du chemin d'effort (L_eq), pour 51 % de l'utilisation de la matière (eta) et pour +41 % de leur covariance (identité vérifiée à 1e-15).
-- Bruit du maillage : le kg/kN à 6 mm s'écarte de celui à 8 mm de +2.9 % en moyenne, avec 4.4 % d'écart-type d'un concept à l'autre (4 concepts) : deux concepts à moins d'environ 13 % l'un de l'autre peuvent s'inverser avec la maille.
+- Bruit du maillage : le kg/kN à 6 mm s'écarte de celui à 8 mm de +4.3 % en moyenne, avec 4.4 % d'écart-type d'un concept à l'autre (6 concepts) : deux concepts à moins d'environ 12 % l'un de l'autre peuvent s'inverser avec la maille.
 - Moins de cinq concepts faisables : pas encore de recherche de liens avec les caractéristiques.

@@ -92,7 +92,7 @@ def main() -> int:
     controles = {
         "outils : 3 requêtes": len(req1) == 3,
         "outils : outils déclarés": [t["function"]["name"] for t in req1[0]["tools"]]
-                                    == ["verifier_concept", "enregistrer_concept"],
+                                    == ["verifier_concept", "enregistrer_concept", "predimensionner"],
         "outils : erreur renvoyée au modèle": retour_outil["role"] == "tool" and "fixation" in retour_outil["content"],
         "outils : concept enregistré": noms1 == ["Test modèle ouvert"],
         "outils : arrêt normal": s1.arret == "terminé" and s1.bilan.startswith("Bilan"),

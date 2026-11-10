@@ -415,6 +415,7 @@ class Doublures:
         if op == "ameliorer":
             d["experience"] = {"parent": "F002", "modification": "retours sur la diagonale imposés",
                                "grandeur": "kg_par_kN", "sens": "baisse", "lecon": "L001"}
+            d["prediction"] = {"kg_par_kN": 0.26, "mode_limite": "plastification", "principes": ["P3", "p7"]}
         reglages.sortie.mkdir(parents=True, exist_ok=True)
         chemin = reglages.sortie / f"concept_{len(self.appels)}.json"
         chemin.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
@@ -424,7 +425,8 @@ class Doublures:
 
     def optimiseur(self, chemin, reglages, depart, dossier, afficher):
         sur_disque = Carnet.charger(self.carnet.chemin)
-        self.appels[-1].update(depart=depart, attente_sur_disque=[e.id for e in sur_disque.experiences_a_faire()])
+        self.appels[-1].update(depart=depart, attente_sur_disque=[e.id for e in sur_disque.experiences_a_faire()],
+                               predictions_sur_disque=[(p.id, p.statut) for p in sur_disque.predictions])
         l_eq, _ = self.kg[self.appels[-1]["op"]]  # kg/kN de l'optimiseur à 8 mm : 4,6 % sous celui de la fiche
         return {"valeurs": dict(VALEURS), "kg_par_kN": kg_8mm(l_eq), "faisable": True, "essais": 64, "faisables": 20,
                 "budget": list(reglages.budget if depart else reglages.budget_exploration), "taille": 8.0}
@@ -462,6 +464,12 @@ def test_boucle(dossier: Path) -> None:
     verifier("boucle : prédiction de l'IA Concepteur enregistrée sur le disque avant l'optimisation, parent imposé",
              a1["attente_sur_disque"] == ["E001"] and e1.parent == "F001" and e1.lecon == "L001"
              and e1.modification == "retours sur la diagonale imposés")
+    pr = c.predictions[0] if c.predictions else None
+    verifier("boucle : prédiction physique sur le disque avant l'optimisation, puis jugée sur la fiche",
+             a1["predictions_sur_disque"] == [("PR001", "a_verifier")] and len(c.predictions) == 1
+             and pr.experience == "E001" and pr.principes == ["P3", "P7"] and pr.fiche == "F003"
+             and pr.statut == "verifiee" and pr.verdict == "juste" and math.isclose(pr.mesure["ecart_pct"], 6.68, abs_tol=0.05),
+             pr.texte() if pr else "aucune prédiction")
     verifier("boucle : pendant une expérience, ni calcul rapide ni exemple, concept du parent dans la consigne",
              not a1["calcul"] and a1["exemples"] == [] and "idée d'Iwan" in a1["consigne"]
              and "Garde les noms des variables" in a1["consigne"] and not a2["calcul"])

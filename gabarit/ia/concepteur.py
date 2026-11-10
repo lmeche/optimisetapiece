@@ -1,9 +1,11 @@
 """IA Concepteur (phase 4) : Claude propose des formes générales au format déclaratif et les corrige lui-même.
 
-Déroulé : le cahier des charges, le format des concepts, les règles de fabrication, ce que l'on a appris
-des concepts précédents et un concept d'exemple partent dans le prompt système. Claude écrit un concept,
-appelle l'outil `verifier_concept` (géométrie au point central et sur des tirages aléatoires, calcul
-rapide), corrige d'après le rapport, puis appelle `enregistrer_concept`. Rien n'est enregistré sans
+Déroulé : le cahier des charges, le format des concepts, les règles de fabrication, le savoir physique
+(gabarit/savoir : principes et chiffres du cas), ce que l'on a appris des concepts précédents et un concept
+d'exemple partent dans le prompt système. Claude chiffre son idée avec l'outil `predimensionner` (calculatrice
+de physique des tôles, sans éléments finis), écrit un concept et sa prédiction physique, appelle l'outil
+`verifier_concept` (géométrie au point central et sur des tirages aléatoires, calcul rapide), corrige d'après
+le rapport, puis appelle `enregistrer_concept`. Rien n'est enregistré sans
 passer les contrôles. Les concepts acceptés vont dans concepts/ia/ et s'optimisent ensuite avec
 exemples/optimiser_concept.py.
 
@@ -21,6 +23,9 @@ import anthropic
 from gabarit.cahier_des_charges import CahierDesCharges
 from gabarit.concepts import format as format_concepts
 from gabarit.ia.outils import PART_TIRAGES_VALIDES_MIN, enregistrer, examiner_concept
+from gabarit.savoir import outil as outil_savoir
+from gabarit.savoir import prediction as prediction_physique
+from gabarit.savoir import principes as savoir
 
 MODELE = "claude-opus-5-5"
 EFFORT = "high"  # low | medium | high | xhigh | max ; la conception est un travail de raisonnement
@@ -55,6 +60,11 @@ OUTILS = [
         "input_schema": _SCHEMA_CONCEPT,
         "eager_input_streaming": True,
     },
+    {
+        "name": "predimensionner",
+        "description": outil_savoir.DESCRIPTION,
+        "input_schema": outil_savoir.SCHEMA,
+    },
 ]
 
 
@@ -82,9 +92,11 @@ def lecons_par_defaut() -> str:
     return c.pour_prompt(compact=True) if c is not None and (c.lecons or c.fiches) else LECONS_INITIALES
 
 
-def prompt_systeme(cdc: CahierDesCharges, exemples: list[Path], lecons: str | None = None) -> str:
+def prompt_systeme(cdc: CahierDesCharges, exemples: list[Path], lecons: str | None = None,
+                   savoir_compact: bool = False) -> str:
     """lecons : section « Ce qu'on a appris » tirée du carnet d'apprentissage (gabarit/apprentissage) ; à défaut,
-    celle du carnet par défaut s'il existe, sinon les constats des phases 2 à 4."""
+    celle du carnet par défaut s'il existe, sinon les constats des phases 2 à 4. savoir_compact : principes
+    physiques sans leur mécanisme ni leur formule (petits modèles à contexte court)."""
     ex = "\n\n".join(f"Exemple ({p.name}) :\n```json\n{p.read_text(encoding='utf-8').strip()}\n```" for p in exemples)
     appris = lecons.strip() if lecons and lecons.strip() else lecons_par_defaut()
     return f"""Tu es l'IA Concepteur de Gabarit, un outil qui cherche la pièce la plus performante pour un cahier \
@@ -137,6 +149,14 @@ d'un seul tenant.
 {{"parent": "F002", "modification": "ce qui change, en une phrase", "grandeur": "kg_par_kN", "sens": "baisse", \
 "lecon": "L003"}}. C'est ta prédiction : Gabarit l'enregistre avant de calculer le concept, puis la vérifie \
 (grandeurs : kg_par_kN, masse_kg, effort_tenu_N, sigma_utile, flambement, l_eq_mm, eta, part_flexion...).
+- Champ « prediction », à écrire pour chaque concept : {{"kg_par_kN": 0.25, "mode_limite": "flambement", \
+"face_critique": "V.diag", "h_mm": 150, "effort_tenu_kN": 16, "principes": ["P1", "P3"], "raisonnement": "en deux phrases, chiffres de \
+predimensionner à l'appui"}}. kg_par_kN : la valeur que tu attends du calcul complet, à ses dimensions \
+optimisées. mode_limite : la plus petite des trois marges que mesure Gabarit, « plastification » (effort tenu / \
+{cdc.chargements[0].force:g} N), « flambement » (facteur / 3) ou « vis » (33,4 kN / traction max par vis). \
+face_critique (facultatif) : la face « tôle.face » où sera le point critique. \
+Gabarit l'enregistre avant tout calcul, la compare au calcul ({prediction_physique.TOLERANCE_PCT:g} % de \
+tolérance sur le kg/kN, mode exact) et tient le compte des prédictions justes de chaque principe cité.
 
 ## Bonnes pratiques
 - Chaque cote est une variable ou une dérivée de variables : pas de valeur figée sans raison. Classe bien les \
@@ -149,12 +169,15 @@ d'effort, quelle rigidité, quel mode de ruine il vise.
 - Propose des concepts qui diffèrent par leur principe (chemin d'effort, nombre de tôles, type de \
 raidissement), pas seulement par leurs dimensions.
 
+{savoir.pour_prompt(cdc, compact=savoir_compact)}
+
 {appris}
 
 {ex}
 
 ## Méthode
-Pour chaque concept : écris-le, appelle verifier_concept, corrige d'après le rapport jusqu'à ce qu'il soit \
+Pour chaque concept : chiffre ton idée avec predimensionner (hauteur du couple, bielles, parois comprimées), \
+écris le concept et sa prédiction, appelle verifier_concept, corrige d'après le rapport jusqu'à ce qu'il soit \
 valide, puis appelle enregistrer_concept. Travaille au plus deux concepts à la fois : un concept complet fait \
 plusieurs milliers de jetons, et une réponse trop longue est coupée. Le calcul rapide n'est qu'un ordre de \
 grandeur au point central : l'optimiseur trouvera les bonnes dimensions, ton travail est de lui donner une forme et un espace de variables \
@@ -261,6 +284,12 @@ def concevoir(n_concepts: int = 3, chemin_cdc: str | Path = RACINE / "cahiers" /
 
 
 def _executer_outil(nom: str, entree, cdc, sortie: Path, session: Session, calcul: bool) -> tuple[str, bool]:
+    if nom == "predimensionner":
+        if not isinstance(entree, dict):
+            return json.dumps({"INVALID_JSON": "l'entrée doit être un objet"}, ensure_ascii=False), True
+        rapport = outil_savoir.predimensionner(entree, cdc)
+        calcule = any(k in rapport for k in ("treillis", "bielles", "parois", "soudures"))
+        return json.dumps(rapport, ensure_ascii=False), bool(rapport.get("erreurs")) and not calcule
     concept = entree.get("concept") if isinstance(entree, dict) else None
     if not isinstance(concept, dict):  # entrée tronquée ou mal formée : le parseur tolérant l'a laissée passer
         return json.dumps({"INVALID_JSON": "l'entrée doit être {\"concept\": {...}}"}, ensure_ascii=False), True
@@ -270,6 +299,11 @@ def _executer_outil(nom: str, entree, cdc, sortie: Path, session: Session, calcu
         rapport = examiner_concept(concept, cdc, calcul=calcul and nom == "verifier_concept")
     except Exception as ex:  # un concept peut casser la géométrie de façon imprévue : on le dit à l'IA
         return json.dumps({"valide": False, "erreur_interne": str(ex)[:500]}, ensure_ascii=False), True
+    _, a_corriger = prediction_physique.lire(concept)
+    if a_corriger:
+        rapport["prediction_a_corriger"] = a_corriger
+    elif concept.get("prediction") is None:
+        rapport["prediction_a_corriger"] = ["champ « prediction » absent : écris ta prédiction avant d'enregistrer"]
     if nom == "verifier_concept":
         return json.dumps(rapport, ensure_ascii=False), False
     if not rapport["valide"]:

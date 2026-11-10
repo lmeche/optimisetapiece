@@ -22,6 +22,7 @@ from gabarit.cahier_des_charges import CahierDesCharges
 from gabarit.ia.concepteur import RACINE, _relatif
 from gabarit.ia.outils import examiner_concept
 from gabarit.ia.ouvert import URL_OLLAMA, ErreurServeur, concevoir_ouvert
+from gabarit.savoir.prediction import lire as lire_prediction
 
 PISTES = [
     ("Équerre à joues dégressives : deux joues latérales dont la hauteur diminue du socle vers l'appui, reliées "
@@ -44,7 +45,8 @@ PISTES = [
 INVENTER = ("Invente un principe de structure nouveau, différent de toutes les pistes déjà essayées ci-dessous. "
             "Décris-le en une phrase au début de ta réponse et dans le champ « description » du concept.")
 COLONNES = ["essai", "debut", "duree_min", "piste", "statut", "concept", "concept_nom", "masse_kg", "effort_tenu_kN",
-            "kg_par_kN", "valide_sur_tirages", "arret", "jetons_entree", "jetons_sortie"]
+            "kg_par_kN", "kg_par_kN_predit", "mode_predit", "principes", "valide_sur_tirages", "arret", "jetons_entree",
+            "jetons_sortie"]
 ECHECS_CONSECUTIFS_MAX = 3
 
 
@@ -135,6 +137,11 @@ def _mesurer(chemin: Path, cdc: CahierDesCharges, calcul: bool) -> dict:
     """Masse et effort tenu au point central (calcul grossier), pour classer les concepts du catalogue."""
     definition = json.loads(chemin.read_text(encoding="utf-8"))
     m = {"concept": _relatif(chemin), "concept_nom": definition.get("nom", chemin.stem)}
+    pred, _ = lire_prediction(definition)
+    if pred:  # prédiction physique de l'IA (au calcul complet, dimensions optimisées) : à vérifier plus tard
+        m["kg_par_kN_predit"] = pred.get("kg_par_kN")
+        m["mode_predit"] = pred.get("mode_limite")
+        m["principes"] = " ".join(pred.get("principes", []))
     try:
         r = examiner_concept(definition, cdc, calcul=calcul)
     except Exception as ex:  # le concept est déjà enregistré : une mesure ratée ne doit pas arrêter la nuit

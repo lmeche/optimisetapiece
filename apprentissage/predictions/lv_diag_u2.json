@@ -1,0 +1,22 @@
+{
+  "concept": "concepts/sae51_L_V.json",
+  "nom": "L + V, diagonale en U de 2 mm (ailes de 20 mm)",
+  "valeurs_depuis": "tests/donnees/sae51_L_V_optimum.json",
+  "modifications": {"t_V": 2, "h_ret_diag": 20},
+  "prediction": {
+    "kg_par_kN": 0.41,
+    "mode_limite": "plastification",
+    "h_mm": 133.4,
+    "effort_tenu_kN": 8.8,
+    "principes": ["P3", "P4", "P7"],
+    "raisonnement": "Le U de 2 mm règle le flambement de la diagonale : voilement de l'âme x3,5 et flambement d'ensemble x19 (predimensionner, K = 0,575 recalé sur F001). Mais la diagonale est aussi un point critique juste sous l'appui (L007, 146 MPa) : sa section y passe de 510 à 284 mm², la contrainte monte d'autant, vers 260 MPa. Effort tenu vers 8,8 kN pour 3,57 kg : la pièce ne tient plus 1 t et le kg/kN monte."
+  },
+  "experience": {
+    "parent": "F001",
+    "modification": "Diagonale et jambe en 2 mm au lieu de 5, diagonale pliée en U par deux retours de 20 mm (h_ret_diag = 20), le reste aux valeurs de F001",
+    "grandeur": "kg_par_kN",
+    "sens": "hausse",
+    "lecon": "L007"
+  },
+  "source": "claude (calcul à la main avec predimensionner, avant le calcul)"
+}

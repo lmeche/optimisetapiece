@@ -15,6 +15,7 @@ Plan d'action : voir le document « Gabarit : plan d'action ».
 - [x] Phase 4 : format de concept déclaratif, concept « L + V » optimisé, IA Concepteur (`exemples/concevoir.py`)
 - [x] Logiciel : prototype d'application locale (`Gabarit.bat` ou `python -m gabarit.app`)
 - [x] Version 2 : mesures fiables (garde-fou du solveur, extrémités de jonction), compte rendu chiffré, évidements, optimisation topologique, carnet d'apprentissage, IA Analyste et boucle d'apprentissage (`exemples/apprendre.py`)
+- [x] Savoir physique : neuf principes de conception des tôles, outil de prédimensionnement de l'IA, prédictions physiques vérifiées par le calcul et calibrées dans le carnet (`gabarit/savoir/`, `exemples/predire.py`)
 - [ ] Suite : introduction de l'effort par contact avec l'adaptateur, vérification non linéaire (plasticité, grands déplacements) des meilleurs concepts, installeur .exe, recoupement CATIA
 
 ## Phase 2 : ce que fait une évaluation (`gabarit/evaluation.py`)
@@ -346,6 +347,55 @@ l'autre peuvent s'inverser d'une maille à l'autre. C'est la raison de la règle
 Tests hors ligne (sans CalculiX, sans clé ni réseau) : `python tests/tester_apprentissage.py` (statistiques
 comparées à SciPy, verdicts, réponses d'IA piégées, faux serveurs Claude et modèle ouvert, boucle complète avec
 des doublures des étapes coûteuses) et `python tests/tester_topologie.py`.
+
+### Savoir physique (`gabarit/savoir/`)
+
+Jusqu'ici l'IA Concepteur recevait le cahier des charges, le format des concepts, les règles de fabrication et
+les leçons du carnet, mais aucune physique : elle dessinait presque au hasard et les contrôles triaient après
+coup. Le savoir physique lui apprend comment une tôle porte un effort, sans toucher au cahier des charges (il dit
+ce qu'on exige ; le savoir dit comment on conçoit, et il se vérifie).
+
+- **Neuf principes** (`principes.py`), chacun avec sa règle, son mécanisme, sa formule, son domaine de validité
+  et la grandeur que Gabarit mesure pour le vérifier : P1 un couple plutôt que de la flexion (tirant et bielle
+  écartés de h), P2 travail dans le plan, P3 comprimé veut dire plié (flambement, voilement, b/t), P4 un appui
+  sous la charge, P5 la compression passe par contact, P6 pas de matière oisive (eta), P7 l'épaisseur suit le
+  mode de ruine, P8 des liaisons continues, P9 le matériau réel (écrouissage, réserve plastique). Le prompt les
+  reçoit avec les chiffres du cas, calculés depuis le cahier des charges (moment 2,94 kN.m, h = 170 mm entre la
+  semelle et les vis, borne du treillis 0,041 kg/kN, b/t maximal 42 et 14 en S235).
+- **L'outil `predimensionner`** (`outil.py`, formules dans `calculs.py`) : une calculatrice sans éléments finis,
+  à réponse immédiate. L'IA lui donne une hauteur de couple, des bielles et leur section (plaque ou U), des parois
+  comprimées, des soudures ; il rend efforts, contraintes, facteurs de flambement et de voilement, masse, borne du
+  kg/kN, écrouissage des plis, gorge de soudure, et ce qui coince avec le principe en jeu. Un petit modèle calcule
+  mal de tête : l'outil fait l'arithmétique. Le modèle ouvert sans outils l'appelle par un bloc
+  ```` ```json {"predimensionner": {...}} ````. Ses chiffres retrouvent ceux du L + V : avec K = 0,575 (barre
+  soudée aux deux bouts), la diagonale plate a un facteur de flambement de 3,04, celui du calcul complet.
+- **La prédiction physique** (`prediction.py`) : chaque concept porte un champ « prediction » écrit avant tout
+  calcul (kg/kN attendu, mode de ruine, face du point critique en option, principes cités). Au calcul de la
+  fiche, Gabarit la juge : juste si le kg/kN est à 15 % près et le mode exact, partielle si un seul l'est, fausse
+  sinon ; le lieu est jugé à part. Le carnet garde les prédictions (PR001...) et, pour chaque principe, le compte
+  de ses prédictions justes et le biais de l'écart (calibration), repris dans le prompt. Dans la boucle, la
+  prédiction est enregistrée avant l'optimisation ; dans l'exploration de nuit, elle va au catalogue.
+
+Pour tester une idée à la main, comme l'IA : écrire l'essai et sa prédiction dans un fichier, puis
+
+```
+python exemples/predire.py apprentissage/predictions/lv_diag_u2.json
+```
+
+enregistre la prédiction dans le carnet, calcule la fiche (6 mm avec flambement, contrôle à 8 mm) et rend le
+verdict (environ 2 minutes).
+
+**Premier essai, sur la diagonale du L + V** (fiches F005 et F006, prédictions PR001 et PR002) : plier la
+diagonale en U de 2 ou 3 mm règle bien son flambement (facteur 3,43 mesuré pour 3,53 prévu en 2 mm), et la pièce
+devient bien plus lourde par kN, comme prévu. Mais les deux prédictions étaient trop optimistes (écarts de -23 et
+-37 % sur le kg/kN) et le mécanisme supposé était faux : le point critique n'est pas sous l'appui mais au pied de
+la bielle, dans le pli vers la jambe où s'arrêtent les retours (344 et 274 MPa). D'où la leçon L009 et
+l'expérience E004 (renforcer le pied d'une bielle en U de 3 mm), que la boucle testera. Les preuves que ces deux
+essais apportaient à L007 ont été jugées non concluantes, puisque le mécanisme n'était pas le sien.
+
+Le raisonnement complet, avec les chiffres, est dans le document « Gabarit : donner à l'IA le sens physique des
+tôles ». Tests hors ligne : `python tests/tester_savoir.py` (formules recoupées avec ce document et la fiche F001,
+outil, prédictions, calibration, prompt, mode texte).
 
 ## Le logiciel (`gabarit/app/`)
 
