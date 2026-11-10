@@ -12,6 +12,9 @@ from gabarit.cahier_des_charges import CahierDesCharges
 from gabarit.fem.calculix import lancer
 
 PRECHARGE_LIMITE_M10_88 = 0.7 * 800 * 58.0  # N, 70 % de Rm x section résistante (ordre de grandeur)
+RAYON_VIS_SINGULIER = 16.0  # mm, anneau exclu autour de chaque vis, sur la face de fixation
+RAYON_APPUI_SINGULIER = 30.0  # mm, disque exclu sous l'appui (effort réparti sur peu de noeuds)
+RAYON_JONCTION_SINGULIER = 10.0  # mm, boule exclue autour de chaque extrémité de jonction (voir points_singuliers)
 
 
 @dataclass
@@ -89,18 +92,25 @@ def evaluer(concept, cdc: CahierDesCharges, taille: float = 6.0, dossier: Path |
 
 def pic_utile(res, info: dict) -> tuple[int, float]:
     """Noeud et valeur de la plus forte contrainte de Von Mises hors singularités : anneaux de 16 mm autour des
-    vis sur la face de fixation, disque de 30 mm sous l'appui (charge ponctuelle répartie sur peu de noeuds)."""
+    vis sur la face de fixation, disque de 30 mm sous l'appui (charge ponctuelle répartie sur peu de noeuds),
+    boules de 10 mm autour des extrémités de jonction (info["singuliers"]). La contrainte au bord de ces zones
+    compte toujours : une jonction qui s'arrête dans une zone très chargée reste pénalisée, par la contrainte lue
+    à 10 mm de son extrémité plutôt qu'au point singulier, dont la valeur ne dépend que du maillage."""
     vm = res.von_mises()
     co = res.coords
-    xd, td = info["x_dos"], info["t_dos"]
-
-    def singulier(p):
-        if abs(p[0] - xd) <= td and any(np.hypot(p[1] - y, p[2] - z) <= 2 * 8.0 for y, z in info["trous"]):
-            return True
-        return (np.hypot(p[0] - info["x_charge"], p[1]) <= 30.0
-                and abs(p[2] - info["z_charge"]) <= info["t_charge"])
-    n_pic = max((n for n in vm if not singulier(co[n])), key=vm.get)
+    n_pic = max((n for n in vm if not singulier(co[n], info)), key=vm.get)
     return n_pic, vm[n_pic]
+
+
+def singulier(p, info: dict) -> bool:
+    """Le point p est-il dans une zone exclue du critère de contrainte (voir `pic_utile`) ?"""
+    xd, td = info["x_dos"], info["t_dos"]
+    if abs(p[0] - xd) <= td and any(np.hypot(p[1] - y, p[2] - z) <= RAYON_VIS_SINGULIER for y, z in info["trous"]):
+        return True
+    if np.hypot(p[0] - info["x_charge"], p[1]) <= RAYON_APPUI_SINGULIER and abs(p[2] - info["z_charge"]) <= info["t_charge"]:
+        return True
+    pts = info.get("singuliers")
+    return bool(pts) and float(np.min(np.linalg.norm(np.asarray(pts) - np.asarray(p), axis=1))) <= RAYON_JONCTION_SINGULIER
 
 
 def _contact(modele, info, dossier: Path, iterations: int, nom: str = "contact") -> None:

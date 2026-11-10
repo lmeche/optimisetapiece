@@ -15,7 +15,7 @@ Pour comparer deux concepts : le rapport des kg/kN est le produit du rapport des
 rapport des eta, et chaque L_eq se répartit sur les faces.
 
 sigma_moy : Von Mises moyen dans le volume de l'élément ; sigma_utile : contrainte maximale hors singularités
-(bord des vis, sous l'appui), celle qui fixe l'effort tenu (voir gabarit/evaluation.py).
+(bord des vis, sous l'appui, extrémités de jonction), celle qui fixe l'effort tenu (voir gabarit/evaluation.py).
 """
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ from shapely.ops import unary_union
 from gabarit.analyse.champ import ChampElements, champ_elements
 from gabarit.cahier_des_charges import CahierDesCharges
 from gabarit.concepts import evidements as ev
-from gabarit.evaluation import evaluer
+from gabarit.evaluation import evaluer, singulier
 
 SEUIL_PEU_UTILE = 0.2  # une peau sous 20 % de sigma_utile : matière qui ne sert presque pas
 FLAMBEMENT_MIN = 3.0
@@ -40,8 +40,8 @@ FT_RD_M10_88 = 0.9 * 800 * 58.0 / 1.25  # N, résistance de calcul d'une vis M10
 COLONNES_CARTE = 28
 NIVEAUX = "0123456789"  # dizaine de % de sigma_utile ; « ! » au-delà de 100 %
 LEGENDE_CARTES = ("Cartes d'utilisation : chiffre = dizaine de % de la contrainte utile en peau (0 : moins de 10 %, "
-                  "9 : 90 % et plus, ! : au-delà), ~ = zone exclue du critère (autour des vis, sous l'appui), "
-                  "espace = pas de tôle, X = point critique.")
+                  "9 : 90 % et plus, ! : au-delà), ~ = zone exclue du critère (autour des vis, sous l'appui, au bout "
+                  "des jonctions), espace = pas de tôle, X = point critique.")
 
 
 @dataclass
@@ -275,14 +275,9 @@ def _limite(marges: dict, flambement: bool) -> str:
 
 
 def _elements_singuliers(champ: ChampElements, info: dict) -> np.ndarray:
-    """Éléments des zones exclues de sigma_utile : anneaux des vis, disque sous l'appui."""
-    c = champ.centre
-    xd, td = info["x_dos"], info["t_dos"]
-    s = np.zeros(len(c), bool)
-    for y, z in info["trous"]:
-        s |= (np.abs(c[:, 0] - xd) <= td) & (np.hypot(c[:, 1] - y, c[:, 2] - z) <= 16.0)
-    s |= (np.hypot(c[:, 0] - info["x_charge"], c[:, 1]) <= 30.0) & (np.abs(c[:, 2] - info["z_charge"]) <= info["t_charge"])
-    return s
+    """Éléments des zones exclues de sigma_utile : anneaux des vis, disque sous l'appui, extrémités de jonction
+    (mêmes règles que gabarit/evaluation.py, appliquées au centre des éléments)."""
+    return np.array([singulier(p, info) for p in champ.centre], bool)
 
 
 def _face_critique(champ: ChampElements, p: np.ndarray, taille: float) -> str:

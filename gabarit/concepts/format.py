@@ -438,7 +438,8 @@ class ConceptJSON:
         dos = {n for n, (x, y, z) in noeuds.items() if abs(x - xd) < 1e-6} - encastres
         t_dos = max(epaisseurs[e] for e, c in elements.items() if all(abs(noeuds[n][0] - xd) < 1e-6 for n in c))
         info = {"trous": trous, "dos": dos, "x_charge": xc, "noeuds_charge": disque, "x_dos": xd,
-                "t_dos": t_dos, "z_charge": zc, "t_charge": ap.t}
+                "t_dos": t_dos, "z_charge": zc, "t_charge": ap.t,
+                "singuliers": self.points_singuliers(noeuds, elements)}
         modele = ModeleCoque(noeuds, elements, ap.t, materiau, encastres, {n: tuple(f) for n in disque},
                              epaisseurs=epaisseurs)
         return modele, info
@@ -453,6 +454,29 @@ class ConceptJSON:
         for a, b in self.definition.get("soudures", []):
             if a in noeuds_face and b in noeuds_face and len(noeuds_face[a] & noeuds_face[b]) < 3:
                 raise RuntimeError(f"soudure {a}/{b} absente du maillage (aucun noeud commun)")
+
+    def points_singuliers(self, noeuds: dict, elements: dict[int, list[int]]) -> list[tuple[float, float, float]]:
+        """Extrémités de jonction : noeuds communs à plusieurs faces qui sont un sommet de l'une sans être un sommet
+        de l'autre (bout d'une soudure en T au milieu d'une tôle, bout d'un retour qui s'arrête le long du bord
+        d'une autre face, coin d'un doublage). En coques, la contrainte y est théoriquement infinie : elle croît
+        sans fin quand on affine le maillage (L + V : 135, 154, 162 puis 183 MPa à 8, 6, 5 et 4 mm au bout du
+        retour du dos), si bien qu'elle ne mesure rien. Les coins communs à toutes les faces (bout d'un pli sur
+        un bord libre, coin d'une boîte) ne sont pas singuliers."""
+        sommets = {f.id: f.points for f in self._geo.faces}
+        par_noeud: dict[int, set[str]] = {}
+        for e, fs in self.faces_elements.items():
+            if e in elements:
+                for n in elements[e][:4]:  # sommets des faces maillés : toujours des coins d'éléments
+                    par_noeud.setdefault(n, set()).update(fs)
+        points = []
+        for n, fs in sorted(par_noeud.items()):
+            if len(fs) < 2:
+                continue
+            q = np.asarray(noeuds[n], float)
+            est_sommet = [float(np.min(np.linalg.norm(sommets[f] - q, axis=1))) < 0.5 for f in fs]
+            if any(est_sommet) and not all(est_sommet):
+                points.append(tuple(round(float(x), 3) for x in q))
+        return points
 
     def contexte_evidements(self) -> ev.Contexte:
         """Ce qu'il faut savoir de l'assemblage pour placer une découpe (zones protégées)."""

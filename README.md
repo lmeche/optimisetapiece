@@ -23,7 +23,7 @@ Plan d'action : voir le document « Gabarit : plan d'action ».
 3. Vis M10 : noeuds encastrés dans un rayon de 8 mm autour de chaque trou utilisé.
 4. Contact du dos sur le socle : ensembles actifs (on bloque en X les noeuds qui pénètrent, on relâche ceux qui tirent).
 5. Effort de 9 810 N réparti sur le disque Ø50 de l'adaptateur.
-6. Statique : von Mises, flèche, traction par vis. Contrainte « utile » = hors singularités (anneau de 16 mm autour des vis, disque de 30 mm sous l'appui).
+6. Statique : von Mises, flèche, traction par vis. Contrainte « utile » = hors singularités (anneau de 16 mm autour des vis, disque de 30 mm sous l'appui, boule de 10 mm autour de chaque extrémité de jonction : bout d'une soudure en T, d'un retour ou d'un doublage, où la contrainte d'un modèle coque croît sans fin quand on affine le maillage).
 7. Flambement linéaire : seuls les facteurs retrouvés à 3 % près sur deux maillages sont retenus (des modes parasites isolés apparaissent sinon).
 8. Effort tenu = 9 810 x Re / contrainte utile ; objectif masse / effort tenu.
 

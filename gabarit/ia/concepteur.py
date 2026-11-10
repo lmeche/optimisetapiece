@@ -82,7 +82,9 @@ plaqué sur le socle peut aussi s'y appuyer (contact unilatéral, pris en compte
 
 ## Ce que l'optimiseur minimise
 Masse / effort tenu (kg/kN), sous contraintes : pas de plastification à {cdc.chargements[0].force:g} N \
-(contrainte de Von Mises hors singularités au bord des vis et sous l'appui), facteur de flambement linéaire \
+(contrainte de Von Mises hors singularités : anneaux autour des vis, disque sous l'appui et boules de 10 mm autour \
+des extrémités de jonction, bout d'une soudure ou d'un retour qui s'arrête au milieu d'une autre tôle, où la valeur \
+calculée dépend du maillage et pas de la pièce ; la contrainte à 10 mm de ces points compte), facteur de flambement linéaire \
 ≥ 3, traction par vis ≤ résistance d'une M10 8.8 (33,4 kN).
 
 ## Format d'un concept
