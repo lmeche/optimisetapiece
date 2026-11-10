@@ -13,13 +13,15 @@ maillage coque du concept, aux valeurs de ses variables :
    des pics de contrainte artificiels (constaté : +10 % dès 5 % retirés sur L + V), si bien que le kg/kN des
    itérations ne dit rien de celui des vraies poches. L'ESO ne sert qu'à classer la matière, de la moins utile
    à la plus utile ; ce sont les candidats recalculés (plus bas) qui décident.
-Limite connue, mesurée sur L + V à son optimum : la matière peu contrainte n'est pas forcément inutile. Le milieu
-du dessus près du dos travaille à 20-30 % de la contrainte utile, mais il transmet la traction du dessus au dos ;
-une poche de 45 cm² à cet endroit (4 % de la masse) renvoie cette traction dans les bandes latérales, déplace le
-point critique de l'avant du dessus (sous l'appui) à son coin arrière près du pli, et fait monter la contrainte
-utile de 138 à 196 MPa : kg/kN x1,36. Le critère de l'ESO (contrainte de l'élément lui-même) ignore cet effet sur
-le pic, d'où la règle : ce sont les candidats recalculés qui décident, et chacun dit où est passé le point
-critique.
+Limite connue, mesurée sur L + V à son optimum (maille 6 mm, extrémités de jonction exclues) : la matière peu
+contrainte n'est pas forcément inutile. Le milieu du dessus travaille à 20-40 % de la contrainte utile, mais il
+transmet la traction du dessus au dos. Une poche de 46 cm² (ESO 15 %, 4 % de la masse) fait monter la contrainte
+utile de 146 à 157 MPa (point critique passé du bout du dessus à la jonction de la diagonale sous l'appui) :
+kg/kN x1,03. Une poche de 99 cm² (ESO 30 %) renvoie la traction dans les bandes latérales du dessus : 247 MPa,
+pièce non tenue. Le critère de l'ESO (contrainte de l'élément lui-même) ignore cet effet sur le pic, d'où la
+règle : ce sont les candidats recalculés qui décident, et chacun dit où est passé le point critique. (Un premier
+calcul, avant l'exclusion des extrémités de jonction, donnait 138 à 196 MPa pour une poche voisine : ce pic était
+celui du bout du retour du dos, qui croît sans fin avec le raffinement.)
 Le flambement n'est pas suivi pendant les itérations (trop coûteux) : une face qui participe au premier mode
 de flambement n'est pas évidée quand la marge au flambement est faible (une poche l'affaiblirait encore), et
 chaque candidat est vérifié au flambement.

@@ -38,6 +38,7 @@ SEUIL_PEU_UTILE = 0.2  # une peau sous 20 % de sigma_utile : matière qui ne ser
 FLAMBEMENT_MIN = 3.0
 FT_RD_M10_88 = 0.9 * 800 * 58.0 / 1.25  # N, résistance de calcul d'une vis M10 8.8 en traction
 COLONNES_CARTE = 28
+RAYON_ZONE_APPUI = 50.0  # mm autour du centre de la charge : deux rayons de la face d'appui Ø50 de l'adaptateur
 NIVEAUX = "0123456789"  # dizaine de % de sigma_utile ; « ! » au-delà de 100 %
 LEGENDE_CARTES = ("Cartes d'utilisation : chiffre = dizaine de % de la contrainte utile en peau (0 : moins de 10 %, "
                   "9 : 90 % et plus, ! : au-delà), ~ = zone exclue du critère (autour des vis, sous l'appui, au bout "
@@ -229,6 +230,11 @@ def analyser(concept, cdc: CahierDesCharges, taille: float = 6.0, flambement: bo
     p_crit = np.asarray(res.coords[garde["n_pic"]], float)
     face_crit = _face_critique(champ, p_crit, taille)
     cr.point_critique = _point_critique(p_crit, sigma_ref, face_crit, faces, geo, info)
+    zone = _zone_appui(res, info, p_crit, sigma_ref)
+    if zone:
+        zone["face"] = _face_critique(champ, np.asarray(zone["xyz"]), taille)
+        cr.point_critique["appui"] = zone
+        cr.point_critique["texte"] += " ; " + _texte_zone_appui(zone)
 
     for fid, f in faces.items():
         w = champ.poids_face(fid)
@@ -303,6 +309,38 @@ def _point_critique(p: np.ndarray, sigma: float, face_id: str, faces: dict, geo,
             "texte": texte}
 
 
+def _zone_appui(res, info: dict, p_crit: np.ndarray, sigma_ref: float) -> dict:
+    """Le point critique est-il dans la zone d'introduction de l'effort (à moins de RAYON_ZONE_APPUI du centre de
+    la charge) et que vaut la contrainte utile du reste de la pièce ? Diagnostic seulement : le critère (sigma utile)
+    ne change pas. Si la zone d'appui décide, l'effort tenu dépend surtout de la façon dont l'effort entre dans la
+    pièce (et de sa modélisation : efforts nodaux égaux sur le disque Ø50), pas du chemin d'effort global."""
+    c = np.array([info["x_charge"], 0.0, info["z_charge"]], float)
+    d_crit = float(np.linalg.norm(p_crit - c))
+    vm, co = res.von_mises(), res.coords
+    ids = list(vm)
+    s = np.array([vm[n] for n in ids], float)
+    pts = np.array([co[n] for n in ids], float)
+    loin = np.flatnonzero(np.linalg.norm(pts - c, axis=1) > RAYON_ZONE_APPUI)
+    for k in loin[np.argsort(-s[loin])]:
+        if not singulier(pts[k], info):
+            return {"rayon_mm": RAYON_ZONE_APPUI, "distance_critique_mm": round(d_crit, 1),
+                    "critique_dans_zone": d_crit <= RAYON_ZONE_APPUI, "sigma_hors_zone": float(s[k]),
+                    "xyz": pts[k].round(1).tolist(), "rapport": float(sigma_ref / s[k]) if s[k] > 0 else math.nan}
+    return {}
+
+
+def _texte_zone_appui(z: dict) -> str:
+    hors = (f"au-delà de {z['rayon_mm']:.0f} mm, {z['sigma_hors_zone']:.0f} MPa au plus "
+            f"({z.get('face', '?')} en x {z['xyz'][0]:.0f}, y {z['xyz'][1]:.0f}, z {z['xyz'][2]:.0f})")
+    if not z["critique_dans_zone"]:
+        return f"à {z['distance_critique_mm']:.0f} mm du centre de la charge, hors de la zone d'appui"
+    if z["rapport"] >= 1.05:
+        return (f"à {z['distance_critique_mm']:.0f} mm du centre de la charge, dans la zone d'introduction de l'effort ; "
+                f"{hors} : la zone d'appui fixe l'effort tenu (contrainte x{z['rapport']:.2f})")
+    return (f"à {z['distance_critique_mm']:.0f} mm du centre de la charge ; {hors}, presque autant : "
+            "la zone d'appui ne décide pas seule")
+
+
 def voisinage(face, faces: list, p, info: dict, geo=None, rayon: float | None = None) -> list[tuple[float, str]]:
     """Ce qui entoure un point d'une face (soudure, extrémité de soudure, pli, doublage, évidement, bord libre,
     vis, appui), trié par distance. rayon : distance maximale (défaut max(3 t, 15 mm))."""
@@ -344,8 +382,9 @@ def voisinage(face, faces: list, p, info: dict, geo=None, rayon: float | None = 
             sortie.append((d, f"à {d:.0f} mm de la zone serrée d'une vis (y {y:.0f}, z {z:.0f})"))
     if geo is not None and face.id == geo.appui:
         c = np.array([info["x_charge"], 0.0, info["z_charge"]])
-        d = max(0.0, Point(rep.vers_2d(c - rep.distance_plan(c) * rep.n)).distance(q) - 25.0)
-        sortie.append((d, f"à {d:.0f} mm du bord de l'appui"))
+        r = Point(rep.vers_2d(c - rep.distance_plan(c) * rep.n)).distance(q)
+        sortie.append((0.0, f"sous l'appui, à {25.0 - r:.0f} mm de son bord") if r < 25.0
+                      else (r - 25.0, f"à {r - 25.0:.0f} mm du bord de l'appui"))
     return sorted([s for s in sortie if s[0] <= rayon], key=lambda s: s[0])
 
 
@@ -467,6 +506,14 @@ def pistes(cr: CompteRendu, geo=None) -> list[str]:
         out.append(f"Vis très chargées ({m['traction_vis_N'] / 1000:.1f} kN) : écarter les vis ou en utiliser plus "
                    "(bras de levier plus grand sur le socle).")
     pc = cr.point_critique
+    za = pc.get("appui") or {}
+    if za.get("critique_dans_zone") and za.get("rapport", 0) >= 1.15:
+        out.append(f"La zone d'introduction de l'effort fixe l'effort tenu : {m['sigma_utile']:.0f} MPa à "
+                   f"{za['distance_critique_mm']:.0f} mm du centre de la charge, contre {za['sigma_hors_zone']:.0f} MPa "
+                   f"au plus dans le reste de la pièce (x{za['rapport']:.2f}). Étaler l'effort sous l'appui (doublage local, "
+                   "diagonale ou nervure dans l'axe de la charge, appui loin d'un bord libre) rapporte plus qu'alléger "
+                   "ailleurs ; un évidement loin de l'appui ne baisse le kg/kN que s'il ne fait pas monter cette zone. "
+                   "Cette contrainte dépend aussi de la modélisation de l'appui et de la maille.")
     if any("extrémité de la soudure" in v for v in pc.get("voisinage", [])):
         out.append(f"Point critique à l'extrémité d'une ligne de soudure ({pc['face']}) : prolonger la soudure jusqu'à un "
                    "bord, la fermer par un retour, ou élargir la tôle soudée pour étaler l'effort.")

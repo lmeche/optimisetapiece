@@ -1,34 +1,62 @@
 {
-  "description": "Meilleur point de l'optimisation V1 du concept concepts/sae51_L_V.json (168 essais, maille d'exploration 8 mm), figé ici pour que les tests ne dépendent pas du dossier resultats/ (non versionné).",
-  "concept": "concepts/sae51_L_V.json",
-  "valeurs": {
-    "t_L": 5.0,
-    "t_V": 5.0,
-    "ecart_vis": 60,
-    "u_b": 0.3342474550285505,
-    "z_dessus": 192.31397284089252,
-    "u_bas": 0.5066533167104433,
-    "u_pied": 0.37412350273788325,
-    "u_jambe": 0.6513008663103119,
-    "x_diag": 313.0981758081457,
-    "u_bv": 0.5860626053978686,
-    "h_ret_cotes": 0.0,
-    "h_ret_bout": 0.0,
-    "h_ret_diag": 0.0,
-    "h_ret_dos": 33.25
+ "description": "Meilleur point de l'optimisation V1 du concept concepts/sae51_L_V.json (168 essais, maille d'exploration 8 mm), figé ici pour que les tests ne dépendent pas du dossier resultats/ (non versionné).",
+ "concept": "concepts/sae51_L_V.json",
+ "valeurs": {
+  "t_L": 5.0,
+  "t_V": 5.0,
+  "ecart_vis": 60,
+  "u_b": 0.3342474550285505,
+  "z_dessus": 192.31397284089252,
+  "u_bas": 0.5066533167104433,
+  "u_pied": 0.37412350273788325,
+  "u_jambe": 0.6513008663103119,
+  "x_diag": 313.0981758081457,
+  "u_bv": 0.5860626053978686,
+  "h_ret_cotes": 0.0,
+  "h_ret_bout": 0.0,
+  "h_ret_diag": 0.0,
+  "h_ret_dos": 33.25
+ },
+ "verification": {
+  "8 mm": {
+   "masse_kg": 4.375629446411227,
+   "sigma_max_utile": 138.30547569797895,
+   "effort_tenu": 16668.53744123804,
+   "masse_par_kN": 0.2625083011533993,
+   "facteur_flambement": 3.062364,
+   "traction_vis_max": 10852.34832,
+   "point_sigma_utile": [
+    350.0,
+    -3.7,
+    189.8
+   ]
   },
-  "verification": {
-    "6 mm": {
-      "masse_kg": 4.375629446411227,
-      "effort_tenu": 15007.519011425105,
-      "masse_par_kN": 0.2915624789867063,
-      "facteur_flambement": 3.11714
-    },
-    "4 mm": {
-      "masse_kg": 4.375629446411227,
-      "effort_tenu": 12584.919245025347,
-      "masse_par_kN": 0.3476883213327615,
-      "facteur_flambement": 3.012751
-    }
+  "6 mm": {
+   "masse_kg": 4.375629446411227,
+   "sigma_max_utile": 145.76386025129744,
+   "effort_tenu": 15815.648652728927,
+   "masse_par_kN": 0.2766645581530562,
+   "facteur_flambement": 3.03624,
+   "traction_vis_max": 10959.080617000001,
+   "point_sigma_utile": [
+    350.0,
+    2.6,
+    189.8
+   ]
+  },
+  "4 mm": {
+   "masse_kg": 4.375629446411227,
+   "sigma_max_utile": 161.05736381156373,
+   "effort_tenu": 14313.844120143724,
+   "masse_par_kN": 0.30569212642559446,
+   "facteur_flambement": 3.013217,
+   "traction_vis_max": 10831.441895750004,
+   "point_sigma_utile": [
+    316.3,
+    31.1,
+    194.8
+   ]
   }
+ },
+ "verification_note": "Recalculé avec la règle actuelle de la contrainte utile (extrémités de jonction exclues) et le garde-fou du solveur (une tâche). La contrainte utile est prise dans la zone d'introduction de l'effort et croît encore avec le raffinement."
 }

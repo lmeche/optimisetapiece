@@ -176,7 +176,9 @@ def lancer(modele: ModeleCoque, dossier: Path, nom: str = "job", analyse: str = 
             [trouver_ccx(), "-i", nom], cwd=dossier, capture_output=True, text=True, timeout=3600, env=env
         )
         if proc.returncode != 0 or "*ERROR" in proc.stdout:
-            raise RuntimeError(f"CalculiX a échoué :\n{proc.stdout[-3000:]}\n{proc.stderr[-2000:]}")
+            erreurs = [ligne.strip() for ligne in proc.stdout.splitlines() if "ERROR" in ligne]
+            raise RuntimeError(f"CalculiX a échoué ({'; '.join(erreurs[:3]) or f'code {proc.returncode}'}) :\n"
+                               f"{proc.stdout[-3000:]}\n{proc.stderr[-2000:]}")
         res = Resultats(dossier / f"{nom}.frd", dossier / f"{nom}.dat")
         res.essais = essai
         if not controle:
