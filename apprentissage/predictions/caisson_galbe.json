@@ -1,0 +1,36 @@
+{
+  "concept": "concepts/sae51_caisson_galbe.json",
+  "nom": "Caisson galbé (joues triangulaires, idée d'Iwan), optimum à 8 mm",
+  "valeurs": {
+    "t_A": 4.0,
+    "t_B": 2.0,
+    "ecart_vis": 20,
+    "u_b": 0.0001,
+    "z_haut": 200.1037,
+    "u_bas": 0.169,
+    "u_c": 0.8757,
+    "x_ap": 270.1465,
+    "x_end": 330.2017,
+    "u_h1": 0.3333,
+    "u_h2": 0.3383,
+    "u_h3": 0.3333,
+    "m_joue": 0.0,
+    "m_dos": 0.0
+  },
+  "prediction": {
+    "kg_par_kN": 0.21,
+    "mode_limite": "plastification",
+    "face_critique": "A.dos",
+    "h_mm": 170,
+    "effort_tenu_kN": 11.1,
+    "principes": [
+      "P1",
+      "P3",
+      "P4",
+      "P5",
+      "P7"
+    ],
+    "raisonnement": "Caisson fermé : la semelle comprimée est tenue sur ses deux bords par les joues (flambement 9,8 à 8 mm), le bout de la semelle soutient le dessus sous l'appui. Ce qui limite reste la flexion du dos entre le pli du dessus (z = 200) et la rangée de vis z = 180, comme à 8 mm (0,198 kg/kN) ; à 6 mm, dérive de maille comparable à celle du L + V (+5 %)."
+  },
+  "source": "claude (après l'optimisation à 8 mm, avant le calcul à 6 mm)"
+}

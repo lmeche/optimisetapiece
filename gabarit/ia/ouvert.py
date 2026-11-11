@@ -28,9 +28,11 @@ from gabarit.ia.concepteur import OUTILS, RACINE, TOURS_MAX, Session, _executer_
 
 URL_OLLAMA = "http://localhost:11434/v1"
 CONSIGNE_TEXTE = (
-    "\n\n## Si tu ne peux pas appeler d'outil\nÉcris le concept complet dans un bloc ```json (un seul concept "
-    "par message). Gabarit le vérifie, l'enregistre s'il passe les contrôles et te répond avec le rapport. "
-    "Quand tous les concepts demandés sont enregistrés, termine par le bilan sans bloc json.")
+    "\n\n## Si tu ne peux pas appeler d'outil\nPour chiffrer une idée, écris un bloc ```json "
+    "{\"predimensionner\": {...}} (mêmes champs que l'outil) : Gabarit te répond avec le calcul. Puis écris le "
+    "concept complet, avec sa prédiction, dans un bloc ```json (un seul concept par message). Gabarit le vérifie, "
+    "l'enregistre s'il passe les contrôles et te répond avec le rapport. Quand tous les concepts demandés sont "
+    "enregistrés, termine par le bilan sans bloc json.")
 
 
 def _outils_openai() -> list[dict]:
@@ -50,7 +52,7 @@ def concevoir_ouvert(n_concepts: int = 3, url: str = URL_OLLAMA, modele: str = "
     quoi = "un concept" if n_concepts == 1 else f"{n_concepts} concepts différents"
     demande = (f"Propose {quoi} pour ce cahier des charges, chacun vérifié puis enregistré."
                + (f"\n\nConsigne de l'utilisateur : {consigne}" if consigne else ""))
-    messages = [{"role": "system", "content": prompt_systeme(cdc, exemples, lecons) + CONSIGNE_TEXTE},
+    messages = [{"role": "system", "content": prompt_systeme(cdc, exemples, lecons, savoir_compact=True) + CONSIGNE_TEXTE},
                 {"role": "user", "content": demande}]
     session.journal(f"# IA Concepteur (modèle ouvert)\n\nServeur {url}, modèle {modele}.\n\n**Demande** : {demande}")
     entetes = {"Content-Type": "application/json", **({"Authorization": f"Bearer {cle}"} if cle else {})}
@@ -95,6 +97,13 @@ def concevoir_ouvert(n_concepts: int = 3, url: str = URL_OLLAMA, modele: str = "
                 messages.append({"role": "tool", "tool_call_id": a.get("id", nom), "content": resultat})
             continue
 
+        demande_calcul = _predimensionnement_dans_texte(texte)
+        if demande_calcul is not None:  # mode texte : le modèle chiffre son idée avant d'écrire le concept
+            resultat, _ = _executer_outil("predimensionner", demande_calcul, cdc, sortie, session, calcul)
+            afficher(f"\n[predimensionner] {resultat[:300]}{'…' if len(resultat) > 300 else ''}\n")
+            session.journal(f"**Résultat de predimensionner** :\n```json\n{resultat}\n```")
+            messages.append({"role": "user", "content": f"Calcul de predimensionnement :\n```json\n{resultat}\n```"})
+            continue
         concept = _concept_dans_texte(texte)
         if concept is None:
             if "```" in texte and illisibles < 2:  # un bloc de code mal formé : on redemande
@@ -141,6 +150,20 @@ def _poster(url: str, corps: dict, entetes: dict, delai: float) -> dict:
             return json.loads(r.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
         raise ErreurServeur(e.code, e.read().decode("utf-8", "replace")) from None
+
+
+def _predimensionnement_dans_texte(texte: str) -> dict | None:
+    """Dernier bloc ```json du texte de la forme {"predimensionner": {...}}, s'il n'y a pas de concept après."""
+    for bloc in reversed(re.findall(r"```(?:json)?\s*(\{.*?\})\s*```", texte, flags=re.DOTALL)):
+        try:
+            d = json.loads(bloc)
+        except ValueError:
+            continue
+        if isinstance(d, dict) and "toles" in d.get("concept", d):
+            return None  # un concept vient après : c'est lui qui compte
+        if isinstance(d, dict) and isinstance(d.get("predimensionner"), dict):
+            return d["predimensionner"]
+    return None
 
 
 def _concept_dans_texte(texte: str) -> dict | None:

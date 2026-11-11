@@ -571,6 +571,495 @@
     "L.dos : 88 % de sa surface travaille à moins de 20 % (14 % de la masse) : candidate pour un évidement (variable « evidement ») ou une tôle plus mince.",
     "V.jambe : 100 % de sa surface travaille à moins de 20 % (10 % de la masse) : candidate pour un évidement (variable « evidement ») ou une tôle plus mince."
    ]
+  },
+  {
+   "id": "F005",
+   "nom": "L + V, diagonale en U de 2 mm (ailes de 20 mm)",
+   "fichier": "concepts/sae51_L_V.json",
+   "valeurs": {
+    "t_L": 5.0,
+    "t_V": 2,
+    "ecart_vis": 60,
+    "u_b": 0.3342474550285505,
+    "z_dessus": 192.31397284089252,
+    "u_bas": 0.5066533167104433,
+    "u_pied": 0.37412350273788325,
+    "u_jambe": 0.6513008663103119,
+    "x_diag": 313.0981758081457,
+    "u_bv": 0.5860626053978686,
+    "h_ret_cotes": 0.0,
+    "h_ret_bout": 0.0,
+    "h_ret_diag": 20,
+    "h_ret_dos": 33.25
+   },
+   "origine": "claude (calcul à la main avec predimensionner, avant le calcul)",
+   "parent": "F001",
+   "experience": "E002",
+   "principe": "Une tôle pliée en L (dos vissé sur la grille, dessus qui reçoit l'appui) et une tôle pliée en V dessous : une jambe doublée contre le dos, une diagonale qui remonte souder sous le dessus. Dos, dessus et diagonale forment un triangle. Retours optionnels sur les bords du dessus et de la diagonale.",
+   "date": "2026-11-10 22:21",
+   "faisable": false,
+   "erreurs": [],
+   "taille": 6.0,
+   "mesures": {
+    "masse_kg": 3.5711359166316896,
+    "effort_tenu_N": 6693.75798160914,
+    "kg_par_kN": 0.533502395282778,
+    "sigma_utile": 344.40295067940406,
+    "flambement": 3.431701,
+    "traction_vis_N": 10276.304315,
+    "fleche": 0.6606054988721805
+   },
+   "marges": {
+    "plastification": 0.6823402631609725,
+    "flambement": 1.1439003333333333,
+    "vis": 3.250974180594807
+   },
+   "decomposition": {
+    "l_eq_mm": 1885.4726856097982,
+    "eta": 0.11805534810018553,
+    "part_flexion": 0.16868208529609957
+   },
+   "limite": "la plastification (contrainte au point critique), NON TENU (marge x0.68)",
+   "point_critique": {
+    "face": "V.jambe",
+    "texte": "344 MPa sur V.jambe en (x 23, y -51, z 58), à 1 mm du pli avec V.diag, à 1 mm d'un bord libre ; à 330 mm du centre de la charge, hors de la zone d'appui"
+   },
+   "faces": [
+    {
+     "id": "L.dos",
+     "t": 5.0,
+     "part_masse": 0.15484516439533422,
+     "part_energie": 0.04713213944860252,
+     "l_eq_mm": 121.91672902421406,
+     "eta": 0.04929820149627913,
+     "part_flexion": 0.4515923233345835,
+     "part_peu_utile": 0.9223072401816931
+    },
+    {
+     "id": "L.dessus",
+     "t": 5.0,
+     "part_masse": 0.5315159520087323,
+     "part_energie": 0.28096071624349767,
+     "l_eq_mm": 839.0197924693654,
+     "eta": 0.09883740254149397,
+     "part_flexion": 0.39194077744318073,
+     "part_peu_utile": 0.6773289359985609
+    },
+    {
+     "id": "L.retour_dos_g",
+     "t": 5.0,
+     "part_masse": 0.03486724068453394,
+     "part_energie": 0.0037445800845659055,
+     "l_eq_mm": 23.681132076097775,
+     "eta": 0.04252558544292316,
+     "part_flexion": 0.12941885409880435,
+     "part_peu_utile": 0.9794873871155358
+    },
+    {
+     "id": "L.retour_dos_d",
+     "t": 5.0,
+     "part_masse": 0.03486724068453394,
+     "part_energie": 0.003980277742184478,
+     "l_eq_mm": 24.625673043412597,
+     "eta": 0.04422175256368467,
+     "part_flexion": 0.14693764603262455,
+     "part_peu_utile": 0.9730254609909219
+    },
+    {
+     "id": "V.jambe",
+     "t": 2.0,
+     "part_masse": 0.04432386324502649,
+     "part_energie": 0.016836879778175513,
+     "l_eq_mm": 50.53338723627501,
+     "eta": 0.07138487845919818,
+     "part_flexion": 0.11268615167321733,
+     "part_peu_utile": 0.8537578012141142
+    },
+    {
+     "id": "V.diag",
+     "t": 2.0,
+     "part_masse": 0.14334855694970267,
+     "part_energie": 0.5992092922577381,
+     "l_eq_mm": 721.0822244098216,
+     "eta": 0.3149610758417337,
+     "part_flexion": 0.05529425097134832,
+     "part_peu_utile": 0.005282068343821372
+    },
+    {
+     "id": "V.retour_diag_g",
+     "t": 2.0,
+     "part_masse": 0.028115991016068223,
+     "part_energie": 0.024380555026883,
+     "l_eq_mm": 52.65252970014482,
+     "eta": 0.11725497184934539,
+     "part_flexion": 0.02444360368204454,
+     "part_peu_utile": 0.7704502296563792
+    },
+    {
+     "id": "V.retour_diag_d",
+     "t": 2.0,
+     "part_masse": 0.028115991016068275,
+     "part_energie": 0.023755559418352827,
+     "l_eq_mm": 51.96121765046699,
+     "eta": 0.11571544895489508,
+     "part_flexion": 0.02450284011254122,
+     "part_peu_utile": 0.7705128286683902
+    }
+   ],
+   "caracteristiques": {
+    "n_toles": 2,
+    "n_faces": 8,
+    "n_plis": 8,
+    "n_soudures": 1,
+    "n_doublages": 1,
+    "n_retours": 2,
+    "n_faces_inclinees": 1,
+    "n_evidements": 0,
+    "aire_evidements_cm2": 0.0,
+    "epaisseur_moy_mm": 3.661,
+    "aire_tole_cm2": 1242.7,
+    "part_flexion": 0.16868208529609957,
+    "part_masse_peu_utile": 0.6528294102879885
+   },
+   "convergence": {
+    "taille": 8.0,
+    "kg_par_kN": 0.5124047508275056
+   },
+   "optimisation": {},
+   "pistes": [
+    "Flambement proche de la limite (facteur 3.43) : il bloque toute réduction de masse. Faces qui flambent : V.diag. Un retour (pli) sur leur bord libre, une épaisseur plus forte ou une largeur plus faible entre appuis les raidissent.",
+    "Point critique au pli (V.jambe) : la tôle plie le long de ce pli ; un appui (diagonale, gousset) ou un retour qui ferme l'angle soulage le pli.",
+    "L.dessus : 68 % de sa surface travaille à moins de 20 % (53 % de la masse) : candidate pour un évidement (variable « evidement ») ou une tôle plus mince.",
+    "L.dos : 92 % de sa surface travaille à moins de 20 % (15 % de la masse) : candidate pour un évidement (variable « evidement ») ou une tôle plus mince."
+   ]
+  },
+  {
+   "id": "F006",
+   "nom": "L + V, diagonale en U de 3 mm (ailes de 20 mm)",
+   "fichier": "concepts/sae51_L_V.json",
+   "valeurs": {
+    "t_L": 5.0,
+    "t_V": 3,
+    "ecart_vis": 60,
+    "u_b": 0.3342474550285505,
+    "z_dessus": 192.31397284089252,
+    "u_bas": 0.5066533167104433,
+    "u_pied": 0.37412350273788325,
+    "u_jambe": 0.6513008663103119,
+    "x_diag": 313.0981758081457,
+    "u_bv": 0.5860626053978686,
+    "h_ret_cotes": 0.0,
+    "h_ret_bout": 0.0,
+    "h_ret_diag": 20,
+    "h_ret_dos": 33.25
+   },
+   "origine": "claude (calcul à la main avec predimensionner, avant le calcul)",
+   "parent": "F001",
+   "experience": "E003",
+   "principe": "Une tôle pliée en L (dos vissé sur la grille, dessus qui reçoit l'appui) et une tôle pliée en V dessous : une jambe doublée contre le dos, une diagonale qui remonte souder sous le dessus. Dos, dessus et diagonale forment un triangle. Retours optionnels sur les bords du dessus et de la diagonale.",
+   "date": "2026-11-10 22:23",
+   "faisable": false,
+   "erreurs": [],
+   "taille": 6.0,
+   "mesures": {
+    "masse_kg": 4.00664380214016,
+    "effort_tenu_N": 8416.434648282651,
+    "kg_par_kN": 0.47605001043496536,
+    "sigma_utile": 273.9105210625499,
+    "flambement": 9.363783,
+    "traction_vis_N": 10893.464126,
+    "fleche": 0.4962616139097744
+   },
+   "marges": {
+    "plastification": 0.8579444085915037,
+    "flambement": 3.121261,
+    "vis": 3.066793043386757
+   },
+   "decomposition": {
+    "l_eq_mm": 1854.4182148002799,
+    "eta": 0.130123848666802,
+    "part_flexion": 0.17721322231277817
+   },
+   "limite": "la plastification (contrainte au point critique), NON TENU (marge x0.86)",
+   "point_critique": {
+    "face": "V.diag",
+    "texte": "274 MPa sur V.diag en (x 22, y -52, z 59), à 1 mm du pli avec V.jambe, à 1 mm du pli avec V.retour_diag_g ; à 330 mm du centre de la charge, hors de la zone d'appui"
+   },
+   "faces": [
+    {
+     "id": "L.dos",
+     "t": 5.0,
+     "part_masse": 0.1380140475161641,
+     "part_energie": 0.06247847391555267,
+     "l_eq_mm": 112.6062234418293,
+     "eta": 0.05725169070267945,
+     "part_flexion": 0.4398329945100435,
+     "part_peu_utile": 0.8956770072625339
+    },
+    {
+     "id": "L.dessus",
+     "t": 5.0,
+     "part_masse": 0.47374206448479034,
+     "part_energie": 0.33177307256371363,
+     "l_eq_mm": 809.0017127621035,
+     "eta": 0.11982755784527636,
+     "part_flexion": 0.2961795585544714,
+     "part_peu_utile": 0.6406534462973903
+    },
+    {
+     "id": "L.retour_dos_g",
+     "t": 5.0,
+     "part_masse": 0.03107729602912803,
+     "part_energie": 0.005459804643354972,
+     "l_eq_mm": 24.79542682078689,
+     "eta": 0.05598576015072926,
+     "part_flexion": 0.13083408957120943,
+     "part_peu_utile": 0.9237798873391256
+    },
+    {
+     "id": "L.retour_dos_d",
+     "t": 5.0,
+     "part_masse": 0.031077296029128034,
+     "part_energie": 0.0057762909908420585,
+     "l_eq_mm": 25.733954929777155,
+     "eta": 0.0581048690486893,
+     "part_flexion": 0.14817974756319705,
+     "part_peu_utile": 0.9003584423356128
+    },
+    {
+     "id": "V.jambe",
+     "t": 3.0,
+     "part_masse": 0.05925902618806647,
+     "part_energie": 0.01682955601991073,
+     "l_eq_mm": 56.34010819398709,
+     "eta": 0.0667132935489588,
+     "part_flexion": 0.15066159090944503,
+     "part_peu_utile": 0.8813671742547189
+    },
+    {
+     "id": "V.diag",
+     "t": 3.0,
+     "part_masse": 0.19165062041962563,
+     "part_energie": 0.5291071827383711,
+     "l_eq_mm": 709.5078108616266,
+     "eta": 0.25977429020609794,
+     "part_flexion": 0.08615613549611464,
+     "part_peu_utile": 0.01131310598473751
+    },
+    {
+     "id": "V.retour_diag_g",
+     "t": 3.0,
+     "part_masse": 0.03758982466654871,
+     "part_energie": 0.02467964024974293,
+     "l_eq_mm": 58.688447209333916,
+     "eta": 0.10955483130981707,
+     "part_flexion": 0.03652250927198424,
+     "part_peu_utile": 0.7915445436911547
+    },
+    {
+     "id": "V.retour_diag_d",
+     "t": 3.0,
+     "part_masse": 0.03758982466654879,
+     "part_energie": 0.023895978878511897,
+     "l_eq_mm": 57.74453058083542,
+     "eta": 0.10779280433648714,
+     "part_flexion": 0.036646657483453624,
+     "part_peu_utile": 0.7883686393200978
+    }
+   ],
+   "caracteristiques": {
+    "n_toles": 2,
+    "n_faces": 8,
+    "n_plis": 8,
+    "n_soudures": 1,
+    "n_doublages": 1,
+    "n_retours": 2,
+    "n_faces_inclinees": 1,
+    "n_evidements": 0,
+    "aire_evidements_cm2": 0.0,
+    "epaisseur_moy_mm": 4.107,
+    "aire_tole_cm2": 1242.7,
+    "part_flexion": 0.17721322231277817,
+    "part_masse_peu_utile": 0.5975955659561418
+   },
+   "convergence": {
+    "taille": 8.0,
+    "kg_par_kN": 0.4322388975085811
+   },
+   "optimisation": {},
+   "pistes": [
+    "Point critique au pli (V.diag) : la tôle plie le long de ce pli ; un appui (diagonale, gousset) ou un retour qui ferme l'angle soulage le pli.",
+    "L.dessus : 64 % de sa surface travaille à moins de 20 % (47 % de la masse) : candidate pour un évidement (variable « evidement ») ou une tôle plus mince.",
+    "L.dos : 90 % de sa surface travaille à moins de 20 % (14 % de la masse) : candidate pour un évidement (variable « evidement ») ou une tôle plus mince."
+   ]
+  },
+  {
+   "id": "F007",
+   "nom": "Caisson galbé (joues triangulaires, idée d'Iwan), optimum à 8 mm",
+   "fichier": "concepts/sae51_caisson_galbe.json",
+   "valeurs": {
+    "t_A": 4.0,
+    "t_B": 2.0,
+    "ecart_vis": 20,
+    "u_b": 0.0001,
+    "z_haut": 200.1037,
+    "u_bas": 0.169,
+    "u_c": 0.8757,
+    "x_ap": 270.1465,
+    "x_end": 330.2017,
+    "u_h1": 0.3333,
+    "u_h2": 0.3383,
+    "u_h3": 0.3333,
+    "m_joue": 0.0,
+    "m_dos": 0.0
+   },
+   "origine": "claude (après l'optimisation à 8 mm, avant le calcul à 6 mm)",
+   "parent": null,
+   "experience": null,
+   "principe": "Poutre-caisson à hauteur variable : une tôle A pliée (dos vissé, dessus en quatre facettes qui suivent un profil galbé, face d'appui horizontale) et une tôle B pliée en U (deux joues triangulaires, semelle droite qui remonte du pied du dos jusque sous l'appui). Le dessus est le tirant, la semelle la bielle, les joues portent le cisaillement dans leur plan. Le profil (trois hauteurs) et les poches ",
+   "date": "2026-11-11 00:39",
+   "faisable": true,
+   "erreurs": [],
+   "taille": 6.0,
+   "mesures": {
+    "masse_kg": 2.338336296405871,
+    "effort_tenu_N": 9968.43101067593,
+    "kg_par_kN": 0.23457415654495412,
+    "sigma_utile": 231.26508048568832,
+    "flambement": 9.916355,
+    "traction_vis_N": 7353.5548340000005,
+    "fleche": 0.5198986729613735
+   },
+   "marges": {
+    "plastification": 1.0161499501198705,
+    "flambement": 3.3054516666666665,
+    "vis": 4.543108843838941
+   },
+   "decomposition": {
+    "l_eq_mm": 1535.9018855407824,
+    "eta": 0.21871829141559446,
+    "part_flexion": 0.196275537843758
+   },
+   "limite": "la plastification (contrainte au point critique)",
+   "point_critique": {
+    "face": "A.dos",
+    "texte": "231 MPa sur A.dos en (x 24, y -28, z 195), à 6 mm de la soudure avec B.joue_g, à 6 mm de la soudure avec B.joue_g, à 6 mm du pli avec A.d1 ; à 297 mm du centre de la charge, hors de la zone d'appui"
+   },
+   "faces": [
+    {
+     "id": "A.dos",
+     "t": 4.0,
+     "part_masse": 0.16434919977598272,
+     "part_energie": 0.12771824129206674,
+     "l_eq_mm": 138.9216495432591,
+     "eta": 0.12037158209452396,
+     "part_flexion": 0.7098681322848065,
+     "part_peu_utile": 0.7456461498708826
+    },
+    {
+     "id": "A.d1",
+     "t": 4.0,
+     "part_masse": 0.05665403808222443,
+     "part_energie": 0.03029395624959462,
+     "l_eq_mm": 68.72393803754086,
+     "eta": 0.17274234006915026,
+     "part_flexion": 0.36606815503706536,
+     "part_peu_utile": 0.41689382910046086
+    },
+    {
+     "id": "A.d2",
+     "t": 4.0,
+     "part_masse": 0.05665919561252154,
+     "part_energie": 0.03438564210664116,
+     "l_eq_mm": 79.7583854609021,
+     "eta": 0.2004599328350107,
+     "part_flexion": 0.008651224229853196,
+     "part_peu_utile": 0.0
+    },
+    {
+     "id": "A.d3",
+     "t": 4.0,
+     "part_masse": 0.05665846107976135,
+     "part_energie": 0.04244946300536545,
+     "l_eq_mm": 88.88293009986603,
+     "eta": 0.2233959110955912,
+     "part_flexion": 0.00882438446403373,
+     "part_peu_utile": 0.0
+    },
+    {
+     "id": "A.d4",
+     "t": 4.0,
+     "part_masse": 0.05665404240622448,
+     "part_energie": 0.04784989767918835,
+     "l_eq_mm": 93.45185384128831,
+     "eta": 0.2348976374933392,
+     "part_flexion": 0.11848551717807028,
+     "part_peu_utile": 0.0
+    },
+    {
+     "id": "A.appui",
+     "t": 4.0,
+     "part_masse": 0.07292503335012247,
+     "part_energie": 0.10529111895117266,
+     "l_eq_mm": 132.2130290572902,
+     "eta": 0.2581780105187838,
+     "part_flexion": 0.6395364565115443,
+     "part_peu_utile": 0.10643216083675297
+    },
+    {
+     "id": "B.joue_g",
+     "t": 2.0,
+     "part_masse": 0.18655394458785152,
+     "part_energie": 0.12585679902823638,
+     "l_eq_mm": 249.24053564760607,
+     "eta": 0.19025490866435296,
+     "part_flexion": 0.06508484740593047,
+     "part_peu_utile": 0.4764041659293226
+    },
+    {
+     "id": "B.semelle",
+     "t": 2.0,
+     "part_masse": 0.1629921405174598,
+     "part_energie": 0.3584782599329313,
+     "l_eq_mm": 432.9857442391241,
+     "eta": 0.3782932268807001,
+     "part_flexion": 0.01306901017548319,
+     "part_peu_utile": 0.0
+    },
+    {
+     "id": "B.joue_d",
+     "t": 2.0,
+     "part_masse": 0.18655394458785157,
+     "part_energie": 0.12767662175480324,
+     "l_eq_mm": 251.72381961390533,
+     "eta": 0.19215049504226017,
+     "part_flexion": 0.062402590218779225,
+     "part_peu_utile": 0.4707058668289185
+    }
+   ],
+   "caracteristiques": {
+    "n_toles": 2,
+    "n_faces": 9,
+    "n_plis": 7,
+    "n_soudures": 14,
+    "n_doublages": 0,
+    "n_retours": 0,
+    "n_faces_inclinees": 1,
+    "n_evidements": 0,
+    "aire_evidements_cm2": 0.0,
+    "epaisseur_moy_mm": 2.604,
+    "aire_tole_cm2": 1143.9,
+    "part_flexion": 0.196275537843758,
+    "part_masse_peu_utile": 0.3306137483657489
+   },
+   "convergence": {
+    "taille": 8.0,
+    "kg_par_kN": 0.24629297827419072
+   },
+   "optimisation": {},
+   "pistes": [
+    "A.dos : 75 % de sa surface travaille à moins de 20 % (16 % de la masse) : candidate pour un évidement (variable « evidement ») ou une tôle plus mince."
+   ]
   }
  ],
  "lecons": [
@@ -745,10 +1234,42 @@
      "verdict": "",
      "note": "limite de la mesure : cette contrainte locale dépend de la modélisation de l'appui (efforts égaux sur les noeuds du disque Ø50, disque de 30 mm exclu) et de la maille. Optimum L + V : 138, 146 puis 161 MPa à 8, 6 puis 4 mm (0,2625, 0,2767 puis 0,3057 kg/kN), le pic passant à 4 mm sur la jonction de la diagonale sous l'appui. Les fiches se comparent donc à maille égale",
      "date": "2026-11-10 01:10"
+    },
+    {
+     "type": "experience",
+     "fiches": [
+      "F001",
+      "F005"
+     ],
+     "grandeur": "kg_par_kN",
+     "valeurs": [
+      0.2766645581530562,
+      0.533502395282778
+     ],
+     "attendu": "hausse",
+     "verdict": "non_concluante",
+     "note": "E002 : Diagonale et jambe en 2 mm au lieu de 5, diagonale pliée en U par deux retours de 20 mm (h_ret_diag = 20), le reste aux valeurs de F001 ; analyse : point critique au pied de la bielle (pli entre V.diag et V.jambe, là où s'arrêtent les retours du U), pas sous l'appui : le kg/kN monte comme prévu, mais pas par le mécanisme de L007. Cette expérience ne teste donc pas L007",
+     "date": "2026-11-10 22:21"
+    },
+    {
+     "type": "experience",
+     "fiches": [
+      "F001",
+      "F006"
+     ],
+     "grandeur": "kg_par_kN",
+     "valeurs": [
+      0.2766645581530562,
+      0.47605001043496536
+     ],
+     "attendu": "hausse",
+     "verdict": "non_concluante",
+     "note": "E003 : Diagonale et jambe en 3 mm au lieu de 5, diagonale pliée en U par deux retours de 20 mm (h_ret_diag = 20), le reste aux valeurs de F001 ; analyse : point critique au pied de la bielle (pli entre V.diag et V.jambe, là où s'arrêtent les retours du U), pas sous l'appui : le kg/kN monte comme prévu, mais pas par le mécanisme de L007. Cette expérience ne teste donc pas L007",
+     "date": "2026-11-10 22:23"
     }
    ],
    "creee": "2026-11-10 01:10",
-   "maj": "2026-11-10 01:10"
+   "maj": "2026-11-10 22:26"
   },
   {
    "id": "L008",
@@ -825,6 +1346,70 @@
    ],
    "creee": "2026-11-10 01:10",
    "maj": "2026-11-10 01:10"
+  },
+  {
+   "id": "L009",
+   "enonce": "Sur L + V, plier la diagonale en U mince (2 ou 3 mm) supprime son flambement (facteur 3,4 puis 9,4), mais le point critique passe au pied de la bielle, au pli entre la diagonale et la jambe, là où s'arrêtent les retours : 344 MPa en 2 mm, 274 MPa en 3 mm, contre 135 à 146 MPa sous l'appui. Amincir la bielle sans dessiner son pied fait perdre plus d'effort tenu que de masse.",
+   "mecanisme": "La bielle pousse environ 24 kN sous 1 t. À son pied, cette poussée tourne dans un pli vers une jambe aussi mince qu'elle, et les retours du U s'arrêtent au pli : l'effort passe par le coin de l'âme, en flexion locale.",
+   "portee": "Bielles minces pliées dont le pied est un pli vers une autre face. En 5 mm (F001), ce pli tenait.",
+   "source": "Claude (analyse des fiches F005 et F006)",
+   "statut": "observee",
+   "preuves": [
+    {
+     "type": "observation",
+     "fiches": [
+      "F005"
+     ],
+     "grandeur": "",
+     "valeurs": [],
+     "attendu": "",
+     "verdict": "conforme",
+     "note": "fiche F005 (U de 2 mm) : 344 MPa sur V.jambe à 1 mm du pli avec V.diag et d'un bord libre, effort tenu 6,7 kN ; flambement 3,43 (3,53 prévu par predimensionner pour le voilement de l'âme)",
+     "date": "2026-11-10 22:26"
+    },
+    {
+     "type": "observation",
+     "fiches": [
+      "F006"
+     ],
+     "grandeur": "",
+     "valeurs": [],
+     "attendu": "",
+     "verdict": "conforme",
+     "note": "fiche F006 (U de 3 mm) : 274 MPa sur V.diag à 1 mm du pli avec V.jambe et du pli avec V.retour_diag_g, effort tenu 8,4 kN ; flambement 9,36 ; L.dessus culmine à 135 MPa",
+     "date": "2026-11-10 22:26"
+    }
+   ],
+   "creee": "2026-11-10 22:26",
+   "maj": "2026-11-10 22:26"
+  },
+  {
+   "id": "L010",
+   "enonce": "Un caisson fermé à hauteur variable en deux tôles (dos et dessus pliés d'une pièce, joues et semelle pliées en U) porte 1 t avec moins de matière que le L + V : 0,235 kg/kN contre 0,277 à 6 mm (−15 %), 0,198 contre 0,263 à 8 mm, 0,204 contre 0,306 à 4 mm. L'optimiseur a gardé un profil droit (triangle) et le bout de la semelle juste après l'axe de la charge (x = 330) ; des poches dans les joues ne paient pas (−1 % au mieux avec une bande de 40 mm, pire en dessous).",
+   "mecanisme": "La semelle comprimée est tenue sur ses deux bords par les joues : plus de bord libre comprimé, flambement 9,9 au lieu de 3,0, et c'est la face la mieux utilisée (eta 0,38). Avec une semelle, l'effort dans les membrures reste constant quand la hauteur suit la distance à la charge, d'où le profil droit. Ce qui limite est la flexion du dos au coin haut, entre le pli du dessus et la rangée de vis z = 180 (71 % de l'énergie du dos en flexion).",
+   "portee": "Console sous effort vertical, deux tôles soudées, socle à grille de vis ; à revoir si la règle de l'essai juge la charge maximale.",
+   "source": "Claude (concept caisson galbé, optimisation et fiche F007)",
+   "statut": "observee",
+   "preuves": [
+    {
+     "type": "comparaison",
+     "fiches": [
+      "F007",
+      "F001"
+     ],
+     "grandeur": "kg_par_kN",
+     "valeurs": [
+      0.23457415654495412,
+      0.2766645581530562
+     ],
+     "attendu": "<",
+     "verdict": "conforme",
+     "note": "à maille égale (6 mm) ; même sens à 8 mm (0,198 contre 0,263) et à 4 mm (0,204 contre 0,306)",
+     "date": "2026-11-11 00:44"
+    }
+   ],
+   "creee": "2026-11-11 00:44",
+   "maj": "2026-11-11 00:44"
   }
  ],
  "experiences": [
@@ -842,6 +1427,157 @@
    "verdict": "",
    "mesure": {},
    "creee": "2026-11-10 01:10"
+  },
+  {
+   "id": "E002",
+   "parent": "F001",
+   "modification": "Diagonale et jambe en 2 mm au lieu de 5, diagonale pliée en U par deux retours de 20 mm (h_ret_diag = 20), le reste aux valeurs de F001",
+   "grandeur": "kg_par_kN",
+   "sens": "hausse",
+   "seuil_pct": 3.0,
+   "lecon": "L007",
+   "source": "claude (calcul à la main avec predimensionner, avant le calcul)",
+   "statut": "faite",
+   "enfant": "F005",
+   "verdict": "confirmee",
+   "mesure": {
+    "parent": 0.2766645581530562,
+    "enfant": 0.533502395282778,
+    "ecart_pct": 92.8336606771418,
+    "note": "enfant non faisable (plastification x0.682) ; verdict tiré de la faisabilité : une pièce qui ne tient pas n'est pas meilleure, quel que soit son kg/kN ; mécanisme : point critique au pied de la bielle (pli entre V.diag et V.jambe, là où s'arrêtent les retours du U), pas sous l'appui : le kg/kN monte comme prévu, mais pas par le mécanisme de L007"
+   },
+   "creee": "2026-11-10 22:19"
+  },
+  {
+   "id": "E003",
+   "parent": "F001",
+   "modification": "Diagonale et jambe en 3 mm au lieu de 5, diagonale pliée en U par deux retours de 20 mm (h_ret_diag = 20), le reste aux valeurs de F001",
+   "grandeur": "kg_par_kN",
+   "sens": "hausse",
+   "seuil_pct": 3.0,
+   "lecon": "L007",
+   "source": "claude (calcul à la main avec predimensionner, avant le calcul)",
+   "statut": "faite",
+   "enfant": "F006",
+   "verdict": "confirmee",
+   "mesure": {
+    "parent": 0.2766645581530562,
+    "enfant": 0.47605001043496536,
+    "ecart_pct": 72.06758018192026,
+    "note": "enfant non faisable (plastification x0.858) ; verdict tiré de la faisabilité : une pièce qui ne tient pas n'est pas meilleure, quel que soit son kg/kN ; mécanisme : point critique au pied de la bielle (pli entre V.diag et V.jambe, là où s'arrêtent les retours du U), pas sous l'appui : le kg/kN monte comme prévu, mais pas par le mécanisme de L007"
+   },
+   "creee": "2026-11-10 22:21"
+  },
+  {
+   "id": "E004",
+   "parent": "F001",
+   "modification": "Garder la diagonale en U de 3 mm (t_V = 3, h_ret_diag = 20) et dessiner le pied de la bielle, où F006 casse : retours du U menés jusqu'à la jambe et soudés à elle, ou gousset dans le pli du pied, pour que la poussée entre dans la jambe par toute la section du U et pas par le coin de l'âme.",
+   "grandeur": "kg_par_kN",
+   "sens": "baisse",
+   "seuil_pct": 3.0,
+   "lecon": "L009",
+   "source": "Claude (analyse des fiches F005 et F006)",
+   "statut": "a_faire",
+   "enfant": null,
+   "verdict": "",
+   "mesure": {},
+   "creee": "2026-11-10 22:26"
+  }
+ ],
+ "predictions": [
+  {
+   "id": "PR001",
+   "concept": "concepts/sae51_L_V.json",
+   "nom": "L + V, diagonale en U de 2 mm (ailes de 20 mm)",
+   "kg_par_kN": 0.41,
+   "mode_limite": "plastification",
+   "principes": [
+    "P3",
+    "P4",
+    "P7"
+   ],
+   "face_critique": "",
+   "h_mm": 133.4,
+   "effort_tenu_kN": 8.8,
+   "raisonnement": "Le U de 2 mm règle le flambement de la diagonale : voilement de l'âme x3,5 et flambement d'ensemble x19 (predimensionner, K = 0,575 recalé sur F001). Mais la diagonale est aussi un point critique juste sous l'appui (L007, 146 MPa) : sa section y passe de 510 à 284 mm², la contrainte monte d'autant, vers 260 MPa. Effort tenu vers 8,8 kN pour 3,57 kg : la pièce ne tient plus 1 t et le kg/kN monte.",
+   "source": "claude (calcul à la main avec predimensionner, avant le calcul)",
+   "experience": "E002",
+   "statut": "verifiee",
+   "fiche": "F005",
+   "verdict": "partielle",
+   "mesure": {
+    "kg_par_kN": 0.533502395282778,
+    "mode_limite": "plastification",
+    "ecart_pct": -23.149360972843752,
+    "valeur_juste": false,
+    "mode_juste": true
+   },
+   "erreurs": [],
+   "creee": "2026-11-10 22:19"
+  },
+  {
+   "id": "PR002",
+   "concept": "concepts/sae51_L_V.json",
+   "nom": "L + V, diagonale en U de 3 mm (ailes de 20 mm)",
+   "kg_par_kN": 0.3,
+   "mode_limite": "plastification",
+   "principes": [
+    "P3",
+    "P4",
+    "P7"
+   ],
+   "face_critique": "",
+   "h_mm": 133.4,
+   "effort_tenu_kN": 13.2,
+   "raisonnement": "En 3 mm le U ne flambe plus (voilement de l'âme x12) et la section passe de 510 à 426 mm². Sous l'appui, la contrainte de la diagonale monte d'environ 510/426, de 146 à 175 MPa (L007) : effort tenu vers 13,2 kN pour 4,01 kg, soit 0,30 kg/kN, plus lourd par kN que F001.",
+   "source": "claude (calcul à la main avec predimensionner, avant le calcul)",
+   "experience": "E003",
+   "statut": "verifiee",
+   "fiche": "F006",
+   "verdict": "partielle",
+   "mesure": {
+    "kg_par_kN": 0.47605001043496536,
+    "mode_limite": "plastification",
+    "ecart_pct": -36.98141089716793,
+    "valeur_juste": false,
+    "mode_juste": true
+   },
+   "erreurs": [],
+   "creee": "2026-11-10 22:21"
+  },
+  {
+   "id": "PR003",
+   "concept": "concepts/sae51_caisson_galbe.json",
+   "nom": "Caisson galbé (joues triangulaires, idée d'Iwan), optimum à 8 mm",
+   "kg_par_kN": 0.21,
+   "mode_limite": "plastification",
+   "principes": [
+    "P1",
+    "P3",
+    "P4",
+    "P5",
+    "P7"
+   ],
+   "face_critique": "A.dos",
+   "h_mm": 170.0,
+   "effort_tenu_kN": 11.1,
+   "raisonnement": "Caisson fermé : la semelle comprimée est tenue sur ses deux bords par les joues (flambement 9,8 à 8 mm), le bout de la semelle soutient le dessus sous l'appui. Ce qui limite reste la flexion du dos entre le pli du dessus (z = 200) et la rangée de vis z = 180, comme à 8 mm (0,198 kg/kN) ; à 6 mm, dérive de maille comparable à celle du L + V (+5 %).",
+   "source": "claude (après l'optimisation à 8 mm, avant le calcul à 6 mm)",
+   "experience": null,
+   "statut": "verifiee",
+   "fiche": "F007",
+   "verdict": "juste",
+   "mesure": {
+    "kg_par_kN": 0.23457415654495412,
+    "mode_limite": "plastification",
+    "ecart_pct": -10.476071578773725,
+    "valeur_juste": true,
+    "mode_juste": true,
+    "face_critique": "A.dos",
+    "lieu_juste": true
+   },
+   "erreurs": [],
+   "creee": "2026-11-11 00:36"
   }
  ],
  "journal": [
@@ -896,6 +1632,78 @@
   {
    "date": "2026-11-10 01:10",
    "evenement": "expérience E001 prévue : E001 (depuis F001, leçon L007) : Prolonger le haut de la diagonale par une patte pliée à plat sous le dessus, centrée sous l'axe de la charge (x = 320) et soudée contre lui (doublage), pour étaler l'effort de l'appui sur deux épaisseurs et sur toute la largeur de la diagonale ; prédiction : kg/kN en baisse d'au moins 3 %"
+  },
+  {
+   "date": "2026-11-10 22:19",
+   "evenement": "expérience E002 prévue : E002 (depuis F001, leçon L007) : Diagonale et jambe en 2 mm au lieu de 5, diagonale pliée en U par deux retours de 20 mm (h_ret_diag = 20), le reste aux valeurs de F001 ; prédiction : kg/kN en hausse d'au moins 3 %"
+  },
+  {
+   "date": "2026-11-10 22:19",
+   "evenement": "prédiction PR001 enregistrée avant le calcul : PR001 (L + V, diagonale en U de 2 mm (ailes de 20 mm), P3, P4, P7) : prédit 0.410 kg/kN, limite plastification"
+  },
+  {
+   "date": "2026-11-10 22:21",
+   "evenement": "fiche F005 : F005 L + V (idée d'Iwan) (NON faisable) : 0.534 kg/kN = masse 3.57 kg / 6.7 kN tenus ; L_eq 1885 mm, eta 0.118, flexion 17 % ; flambement 3.43 ; limite : la plastification (contrainte au point critique), NON TENU (marge x0.68)"
+  },
+  {
+   "date": "2026-11-10 22:21",
+   "evenement": "prédiction PR001 : PR001 (L + V, diagonale en U de 2 mm (ailes de 20 mm), P3, P4, P7) : prédit 0.410 kg/kN, limite plastification -> F005 : 0.534 kg/kN, limite plastification (écart -23 %), partielle"
+  },
+  {
+   "date": "2026-11-10 22:21",
+   "evenement": "expérience E002 : E002 (depuis F001, leçon L007) : Diagonale et jambe en 2 mm au lieu de 5, diagonale pliée en U par deux retours de 20 mm (h_ret_diag = 20), le reste aux valeurs de F001 ; prédiction : kg/kN en hausse d'au moins 3 % -> F005 : 0.2767 -> 0.5335 (+92.8 %), confirmee (enfant non faisable (plastification x0.682) ; verdict tiré de la faisabilité : une pièce qui ne tient pas n'est pas meilleure, quel que soit son kg/kN)"
+  },
+  {
+   "date": "2026-11-10 22:21",
+   "evenement": "expérience E003 prévue : E003 (depuis F001, leçon L007) : Diagonale et jambe en 3 mm au lieu de 5, diagonale pliée en U par deux retours de 20 mm (h_ret_diag = 20), le reste aux valeurs de F001 ; prédiction : kg/kN en hausse d'au moins 3 %"
+  },
+  {
+   "date": "2026-11-10 22:21",
+   "evenement": "prédiction PR002 enregistrée avant le calcul : PR002 (L + V, diagonale en U de 3 mm (ailes de 20 mm), P3, P4, P7) : prédit 0.300 kg/kN, limite plastification"
+  },
+  {
+   "date": "2026-11-10 22:23",
+   "evenement": "fiche F006 : F006 L + V (idée d'Iwan) (NON faisable) : 0.476 kg/kN = masse 4.01 kg / 8.4 kN tenus ; L_eq 1854 mm, eta 0.130, flexion 18 % ; flambement 9.36 ; limite : la plastification (contrainte au point critique), NON TENU (marge x0.86)"
+  },
+  {
+   "date": "2026-11-10 22:23",
+   "evenement": "prédiction PR002 : PR002 (L + V, diagonale en U de 3 mm (ailes de 20 mm), P3, P4, P7) : prédit 0.300 kg/kN, limite plastification -> F006 : 0.476 kg/kN, limite plastification (écart -37 %), partielle"
+  },
+  {
+   "date": "2026-11-10 22:23",
+   "evenement": "expérience E003 : E003 (depuis F001, leçon L007) : Diagonale et jambe en 3 mm au lieu de 5, diagonale pliée en U par deux retours de 20 mm (h_ret_diag = 20), le reste aux valeurs de F001 ; prédiction : kg/kN en hausse d'au moins 3 % -> F006 : 0.2767 -> 0.4761 (+72.1 %), confirmee (enfant non faisable (plastification x0.858) ; verdict tiré de la faisabilité : une pièce qui ne tient pas n'est pas meilleure, quel que soit son kg/kN)"
+  },
+  {
+   "date": "2026-11-10 22:26",
+   "evenement": "leçon L009 (hypothese) : Sur L + V, plier la diagonale en U mince (2 ou 3 mm) supprime son flambement (facteur 3,4 puis 9,4), mais le point critique passe au pied de la bielle, au pli entre la diagonale et la jambe, là où s'arrêtent les retours : 344 MPa en 2 mm, 274 MPa en 3 mm, contre 135 à 146 MPa sous l'appui. Amincir la bielle sans dessiner son pied fait perdre plus d'effort tenu que de masse."
+  },
+  {
+   "date": "2026-11-10 22:26",
+   "evenement": "expérience E004 prévue : E004 (depuis F001, leçon L009) : Garder la diagonale en U de 3 mm (t_V = 3, h_ret_diag = 20) et dessiner le pied de la bielle, où F006 casse : retours du U menés jusqu'à la jambe et soudés à elle, ou gousset dans le pli du pied, pour que la poussée entre dans la jambe par toute la section du U et pas par le coin de l'âme ; prédiction : kg/kN en baisse d'au moins 3 %"
+  },
+  {
+   "date": "2026-11-10 22:26",
+   "evenement": "analyse à la main de F005 et F006 (Claude) : leçon L009, preuves d'expérience de L007 jugées non concluantes (mécanisme différent), expérience E004 prévue"
+  },
+  {
+   "date": "2026-11-11 00:36",
+   "evenement": "prédiction PR003 enregistrée avant le calcul : PR003 (Caisson galbé (joues triangulaires, idée d'Iwan), optimum à 8 mm, P1, P3, P4, P5, P7) : prédit 0.210 kg/kN, limite plastification, point critique sur A.dos"
+  },
+  {
+   "date": "2026-11-11 00:39",
+   "evenement": "fiche F007 : F007 Caisson galbé (idée d'Iwan, joues triangulaires) : 0.235 kg/kN = masse 2.34 kg / 10.0 kN tenus ; L_eq 1536 mm, eta 0.219, flexion 20 % ; flambement 9.92 ; limite : la plastification (contrainte au point critique)"
+  },
+  {
+   "date": "2026-11-11 00:39",
+   "evenement": "prédiction PR003 : PR003 (Caisson galbé (joues triangulaires, idée d'Iwan), optimum à 8 mm, P1, P3, P4, P5, P7) : prédit 0.210 kg/kN, limite plastification, point critique sur A.dos -> F007 : 0.235 kg/kN, limite plastification, point critique sur A.dos (lieu juste) (écart -10 %), juste"
+  },
+  {
+   "date": "2026-11-11 00:44",
+   "evenement": "leçon L010 (hypothese) : Un caisson fermé à hauteur variable en deux tôles (dos et dessus pliés d'une pièce, joues et semelle pliées en U) porte 1 t avec moins de matière que le L + V : 0,235 kg/kN contre 0,277 à 6 mm (−15 %), 0,198 contre 0,263 à 8 mm, 0,204 contre 0,306 à 4 mm. L'optimiseur a gardé un profil droit (triangle) et le bout de la semelle juste après l'axe de la charge (x = 330) ; des poches dans les joues ne paient pas (−1 % au mieux avec une bande de 40 mm, pire en dessous)."
+  },
+  {
+   "date": "2026-11-11 00:44",
+   "evenement": "concept caisson galbé : optimisation 200 essais à 8 mm (0,198 kg/kN), fiche F007 à 6 mm, prédiction PR003 juste, leçon L010"
   }
  ]
 }

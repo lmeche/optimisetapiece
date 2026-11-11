@@ -17,7 +17,8 @@ Un cycle :
    notés dans la fiche ;
 4. fiche : compte rendu complet à la maille des fiches (6 mm, avec flambement) ; le kg/kN de l'optimiseur
    (8 mm) est gardé comme mesure de convergence ;
-5. verdict de l'expérience : Gabarit compare les mesures du parent et de l'enfant (seuil 3 %) ;
+5. verdicts : Gabarit compare les mesures du parent et de l'enfant (expérience, seuil 3 %), et la fiche à la
+   prédiction physique du concept (champ « prediction », enregistrée avant tout calcul : gabarit/savoir) ;
 6. l'IA Analyste explique les écarts, range des leçons (vérifiées sur les mesures) et propose des expériences ;
 7. le carnet est enregistré (apprentissage/carnet.json, et carnet.md lisible) après chaque étape qui le
    change, et le cycle est raconté dans resultats/apprentissage/<date>/journal.md.
@@ -47,9 +48,11 @@ from gabarit.apprentissage.carnet import (
     Carnet,
     Experience,
     Fiche,
+    Prediction,
     grandeur_valide,
     valeur,
 )
+from gabarit.savoir import prediction as prediction_physique
 
 CDC = RACINE / "cahiers" / "sae51_equerre.json"
 MODELE_CLAUDE = "claude-opus-5-5"
@@ -194,6 +197,16 @@ def enregistrer_prediction(carnet: Carnet, definition: dict, parent: str, source
     note = f" ({', '.join(defaut)} par défaut)" if defaut else ""
     return carnet.ajouter_experience(parent, modification or "modification non décrite", grandeur, sens, lecon,
                                      source=source + note)
+
+
+def enregistrer_prediction_physique(carnet: Carnet, definition: dict, chemin: Path, source: str,
+                                    experience: str | None = None) -> Prediction | None:
+    """Prédiction physique du concept (champ « prediction »), enregistrée avant tout calcul ; None si le concept
+    n'en a pas ou si elle n'a ni kg/kN ni mode lisibles. Ce qui était illisible est gardé dans la prédiction."""
+    p, erreurs = prediction_physique.lire(definition)
+    if p is None or "kg_par_kN" not in p or "mode_limite" not in p:
+        return None
+    return carnet.ajouter_prediction(p, chemin, str(definition.get("nom", "")), source, experience, erreurs)
 
 
 # ---------- étapes coûteuses ----------
@@ -414,10 +427,14 @@ def un_cycle(carnet: Carnet, reglages: Reglages, dossier: Path, afficher=print, 
     if operation == "ameliorer":
         e = enregistrer_prediction(carnet, definition, parent.id, source)
         trace["experience"] = e.id
+    pr = enregistrer_prediction_physique(carnet, definition, chemin, source, e.id if e else None)
+    if pr is not None:
+        trace["prediction"] = pr.id
     carnet.noter(f"cycle {numero} ({operation}) : concept {_relatif(chemin)}" + (f", expérience {e.id}" if e else ""))
     carnet.enregistrer()
     _journal(dossier, f"Concept : `{_relatif(chemin)}`, {definition.get('nom', '')}."
-             + (f"\n\nPrédiction enregistrée avant le calcul : {e.texte()}" if e else ""))
+             + (f"\n\nPrédiction enregistrée avant le calcul : {e.texte()}" if e else "")
+             + (f"\n\nPrédiction physique enregistrée avant le calcul : {pr.texte()}" if pr else ""))
 
     # 4. mini-optimisation, depuis les cotes du parent pour un enfant
     opt = optimiseur(chemin, reglages, [parent.valeurs] if parent else None, d / "optimisation", afficher)
@@ -448,6 +465,11 @@ def un_cycle(carnet: Carnet, reglages: Reglages, dossier: Path, afficher=print, 
         trace["verdict"] = e.verdict
         _journal(dossier, f"**Verdict** : {e.texte()}")
         afficher(f"\n[verdict] {e.texte()}\n")
+    if pr is not None:
+        carnet.conclure_prediction(pr.id, fiche.id)
+        trace["verdict_prediction"] = pr.verdict or pr.statut
+        _journal(dossier, f"**Prédiction physique** : {pr.texte()}")
+        afficher(f"\n[prédiction] {pr.texte()}\n")
     carnet.cycles = numero
     carnet.enregistrer()
 
