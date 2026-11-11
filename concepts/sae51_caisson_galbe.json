@@ -1,0 +1,414 @@
+{
+  "nom": "Caisson galbé (idée d'Iwan, joues triangulaires)",
+  "description": "Poutre-caisson à hauteur variable : une tôle A pliée (dos vissé, dessus en quatre facettes qui suivent un profil galbé, face d'appui horizontale) et une tôle B pliée en U (deux joues triangulaires, semelle droite qui remonte du pied du dos jusque sous l'appui). Le dessus est le tirant, la semelle la bielle, les joues portent le cisaillement dans leur plan. Le profil (trois hauteurs) et les poches des joues et du dos sont réglés par l'optimiseur.",
+  "variables": {
+    "t_A": {
+      "type": "epaisseur"
+    },
+    "t_B": {
+      "type": "epaisseur"
+    },
+    "ecart_vis": {
+      "type": "choix",
+      "valeurs": [
+        0,
+        20,
+        40,
+        60
+      ]
+    },
+    "u_b": {
+      "type": "fraction"
+    },
+    "z_haut": {
+      "type": "reel",
+      "min": 100,
+      "max": 210
+    },
+    "u_bas": {
+      "type": "fraction"
+    },
+    "u_c": {
+      "type": "fraction"
+    },
+    "x_ap": {
+      "type": "reel",
+      "min": 150,
+      "max": 280
+    },
+    "x_end": {
+      "type": "reel",
+      "min": 300,
+      "max": 350
+    },
+    "u_h1": {
+      "type": "fraction"
+    },
+    "u_h2": {
+      "type": "fraction"
+    },
+    "u_h3": {
+      "type": "fraction"
+    },
+    "m_joue": {
+      "type": "evidement",
+      "tole": "B",
+      "max": 60
+    },
+    "m_dos": {
+      "type": "evidement",
+      "tole": "A",
+      "max": 50
+    }
+  },
+  "derivees": {
+    "xd": "X_FACE + t_A / 2",
+    "b_min": "max(2 * ecart_vis + 2 * 12 + t_A, 44)",
+    "b": "b_min + u_b * (2 * Y_MAX - 10 - t_B - b_min)",
+    "z_bas": "10 + u_bas * (min(70, z_haut - 80) - 10)",
+    "zc": "z_bas + 40 + u_c * (z_haut + 20 - z_bas - 40)",
+    "h0": "z_haut - z_bas",
+    "dzc": "zc - z_bas",
+    "ls": "x_end - xd",
+    "h_ap": "dzc * (x_end - x_ap) / ls",
+    "x1": "xd + (x_ap - xd) / 4",
+    "x2": "xd + (x_ap - xd) / 2",
+    "x3": "xd + 3 * (x_ap - xd) / 4",
+    "z1": "z_bas + dzc * (x1 - xd) / ls + (h0 + (h_ap - h0) * 0.25) * (0.5 + 1.5 * u_h1)",
+    "z2": "z_bas + dzc * (x2 - xd) / ls + (h0 + (h_ap - h0) * 0.5) * (0.5 + 1.5 * u_h2)",
+    "z3": "z_bas + dzc * (x3 - xd) / ls + (h0 + (h_ap - h0) * 0.75) * (0.5 + 1.5 * u_h3)"
+  },
+  "toles": [
+    {
+      "nom": "A",
+      "epaisseur": "t_A",
+      "faces": {
+        "dos": [
+          [
+            "xd",
+            "-b/2",
+            "z_bas"
+          ],
+          [
+            "xd",
+            "b/2",
+            "z_bas"
+          ],
+          [
+            "xd",
+            "b/2",
+            "z_haut"
+          ],
+          [
+            "xd",
+            "-b/2",
+            "z_haut"
+          ]
+        ],
+        "d1": [
+          [
+            "xd",
+            "-b/2",
+            "z_haut"
+          ],
+          [
+            "xd",
+            "b/2",
+            "z_haut"
+          ],
+          [
+            "x1",
+            "b/2",
+            "z1"
+          ],
+          [
+            "x1",
+            "-b/2",
+            "z1"
+          ]
+        ],
+        "d2": [
+          [
+            "x1",
+            "-b/2",
+            "z1"
+          ],
+          [
+            "x1",
+            "b/2",
+            "z1"
+          ],
+          [
+            "x2",
+            "b/2",
+            "z2"
+          ],
+          [
+            "x2",
+            "-b/2",
+            "z2"
+          ]
+        ],
+        "d3": [
+          [
+            "x2",
+            "-b/2",
+            "z2"
+          ],
+          [
+            "x2",
+            "b/2",
+            "z2"
+          ],
+          [
+            "x3",
+            "b/2",
+            "z3"
+          ],
+          [
+            "x3",
+            "-b/2",
+            "z3"
+          ]
+        ],
+        "d4": [
+          [
+            "x3",
+            "-b/2",
+            "z3"
+          ],
+          [
+            "x3",
+            "b/2",
+            "z3"
+          ],
+          [
+            "x_ap",
+            "b/2",
+            "zc"
+          ],
+          [
+            "x_ap",
+            "-b/2",
+            "zc"
+          ]
+        ],
+        "appui": [
+          [
+            "x_ap",
+            "-b/2",
+            "zc"
+          ],
+          [
+            "x_ap",
+            "b/2",
+            "zc"
+          ],
+          [
+            "X_MAX",
+            "b/2",
+            "zc"
+          ],
+          [
+            "X_MAX",
+            "-b/2",
+            "zc"
+          ]
+        ]
+      },
+      "evidements": [
+        {
+          "face": "dos",
+          "type": "decalage",
+          "marge": "m_dos"
+        }
+      ]
+    },
+    {
+      "nom": "B",
+      "epaisseur": "t_B",
+      "faces": {
+        "joue_g": [
+          [
+            "xd",
+            "-b/2",
+            "z_bas"
+          ],
+          [
+            "x_end",
+            "-b/2",
+            "zc"
+          ],
+          [
+            "x_ap",
+            "-b/2",
+            "zc"
+          ],
+          [
+            "x3",
+            "-b/2",
+            "z3"
+          ],
+          [
+            "x2",
+            "-b/2",
+            "z2"
+          ],
+          [
+            "x1",
+            "-b/2",
+            "z1"
+          ],
+          [
+            "xd",
+            "-b/2",
+            "z_haut"
+          ]
+        ],
+        "semelle": [
+          [
+            "xd",
+            "-b/2",
+            "z_bas"
+          ],
+          [
+            "xd",
+            "b/2",
+            "z_bas"
+          ],
+          [
+            "x_end",
+            "b/2",
+            "zc"
+          ],
+          [
+            "x_end",
+            "-b/2",
+            "zc"
+          ]
+        ],
+        "joue_d": [
+          [
+            "xd",
+            "b/2",
+            "z_bas"
+          ],
+          [
+            "x_end",
+            "b/2",
+            "zc"
+          ],
+          [
+            "x_ap",
+            "b/2",
+            "zc"
+          ],
+          [
+            "x3",
+            "b/2",
+            "z3"
+          ],
+          [
+            "x2",
+            "b/2",
+            "z2"
+          ],
+          [
+            "x1",
+            "b/2",
+            "z1"
+          ],
+          [
+            "xd",
+            "b/2",
+            "z_haut"
+          ]
+        ]
+      },
+      "evidements": [
+        {
+          "face": "joue_g",
+          "type": "decalage",
+          "marge": "m_joue"
+        },
+        {
+          "face": "joue_d",
+          "type": "decalage",
+          "marge": "m_joue"
+        }
+      ]
+    }
+  ],
+  "soudures": [
+    [
+      "B.semelle",
+      "A.dos"
+    ],
+    [
+      "B.semelle",
+      "A.appui"
+    ],
+    [
+      "B.joue_g",
+      "A.dos"
+    ],
+    [
+      "B.joue_g",
+      "A.d1"
+    ],
+    [
+      "B.joue_g",
+      "A.d2"
+    ],
+    [
+      "B.joue_g",
+      "A.d3"
+    ],
+    [
+      "B.joue_g",
+      "A.d4"
+    ],
+    [
+      "B.joue_g",
+      "A.appui"
+    ],
+    [
+      "B.joue_d",
+      "A.dos"
+    ],
+    [
+      "B.joue_d",
+      "A.d1"
+    ],
+    [
+      "B.joue_d",
+      "A.d2"
+    ],
+    [
+      "B.joue_d",
+      "A.d3"
+    ],
+    [
+      "B.joue_d",
+      "A.d4"
+    ],
+    [
+      "B.joue_d",
+      "A.appui"
+    ]
+  ],
+  "fixation": {
+    "face": "A.dos",
+    "colonnes_vis": "ecart_vis"
+  },
+  "appui": {
+    "face": "A.appui"
+  },
+  "justifications": {
+    "A": "Le dos vissé reprend la traction du dessus par les vis ; le dessus, plié en facettes, suit le profil du moment et travaille en traction comme le tirant d'un couple (P1, P2).",
+    "B.semelle": "La semelle est la bielle comprimée : droite pour que les joues puissent être pliées avec elle, tenue sur ses deux bords par les joues (P3), elle pousse sur le pied du dos qui s'appuie sur le socle par contact (P5).",
+    "B.joues": "Les joues portent le cisaillement dans leur plan (P2) et tiennent le dessus juste sous l'appui (P4) ; leur milieu, près de l'axe neutre, travaille peu : une poche y est proposée (P6).",
+    "profil": "Le moment baisse comme la distance à la charge : pour une contrainte égale partout, la hauteur doit baisser moins vite qu'en ligne droite. Trois hauteurs libres laissent l'optimiseur trouver le galbe (0,5 à 2 fois le profil droit).",
+    "caisson": "La section fermée supprime les bords libres comprimés (pas de déversement) et raidit en torsion."
+  }
+}

@@ -892,6 +892,174 @@
     "L.dessus : 64 % de sa surface travaille à moins de 20 % (47 % de la masse) : candidate pour un évidement (variable « evidement ») ou une tôle plus mince.",
     "L.dos : 90 % de sa surface travaille à moins de 20 % (14 % de la masse) : candidate pour un évidement (variable « evidement ») ou une tôle plus mince."
    ]
+  },
+  {
+   "id": "F007",
+   "nom": "Caisson galbé (joues triangulaires, idée d'Iwan), optimum à 8 mm",
+   "fichier": "concepts/sae51_caisson_galbe.json",
+   "valeurs": {
+    "t_A": 4.0,
+    "t_B": 2.0,
+    "ecart_vis": 20,
+    "u_b": 0.0001,
+    "z_haut": 200.1037,
+    "u_bas": 0.169,
+    "u_c": 0.8757,
+    "x_ap": 270.1465,
+    "x_end": 330.2017,
+    "u_h1": 0.3333,
+    "u_h2": 0.3383,
+    "u_h3": 0.3333,
+    "m_joue": 0.0,
+    "m_dos": 0.0
+   },
+   "origine": "claude (après l'optimisation à 8 mm, avant le calcul à 6 mm)",
+   "parent": null,
+   "experience": null,
+   "principe": "Poutre-caisson à hauteur variable : une tôle A pliée (dos vissé, dessus en quatre facettes qui suivent un profil galbé, face d'appui horizontale) et une tôle B pliée en U (deux joues triangulaires, semelle droite qui remonte du pied du dos jusque sous l'appui). Le dessus est le tirant, la semelle la bielle, les joues portent le cisaillement dans leur plan. Le profil (trois hauteurs) et les poches ",
+   "date": "2026-11-11 00:39",
+   "faisable": true,
+   "erreurs": [],
+   "taille": 6.0,
+   "mesures": {
+    "masse_kg": 2.338336296405871,
+    "effort_tenu_N": 9968.43101067593,
+    "kg_par_kN": 0.23457415654495412,
+    "sigma_utile": 231.26508048568832,
+    "flambement": 9.916355,
+    "traction_vis_N": 7353.5548340000005,
+    "fleche": 0.5198986729613735
+   },
+   "marges": {
+    "plastification": 1.0161499501198705,
+    "flambement": 3.3054516666666665,
+    "vis": 4.543108843838941
+   },
+   "decomposition": {
+    "l_eq_mm": 1535.9018855407824,
+    "eta": 0.21871829141559446,
+    "part_flexion": 0.196275537843758
+   },
+   "limite": "la plastification (contrainte au point critique)",
+   "point_critique": {
+    "face": "A.dos",
+    "texte": "231 MPa sur A.dos en (x 24, y -28, z 195), à 6 mm de la soudure avec B.joue_g, à 6 mm de la soudure avec B.joue_g, à 6 mm du pli avec A.d1 ; à 297 mm du centre de la charge, hors de la zone d'appui"
+   },
+   "faces": [
+    {
+     "id": "A.dos",
+     "t": 4.0,
+     "part_masse": 0.16434919977598272,
+     "part_energie": 0.12771824129206674,
+     "l_eq_mm": 138.9216495432591,
+     "eta": 0.12037158209452396,
+     "part_flexion": 0.7098681322848065,
+     "part_peu_utile": 0.7456461498708826
+    },
+    {
+     "id": "A.d1",
+     "t": 4.0,
+     "part_masse": 0.05665403808222443,
+     "part_energie": 0.03029395624959462,
+     "l_eq_mm": 68.72393803754086,
+     "eta": 0.17274234006915026,
+     "part_flexion": 0.36606815503706536,
+     "part_peu_utile": 0.41689382910046086
+    },
+    {
+     "id": "A.d2",
+     "t": 4.0,
+     "part_masse": 0.05665919561252154,
+     "part_energie": 0.03438564210664116,
+     "l_eq_mm": 79.7583854609021,
+     "eta": 0.2004599328350107,
+     "part_flexion": 0.008651224229853196,
+     "part_peu_utile": 0.0
+    },
+    {
+     "id": "A.d3",
+     "t": 4.0,
+     "part_masse": 0.05665846107976135,
+     "part_energie": 0.04244946300536545,
+     "l_eq_mm": 88.88293009986603,
+     "eta": 0.2233959110955912,
+     "part_flexion": 0.00882438446403373,
+     "part_peu_utile": 0.0
+    },
+    {
+     "id": "A.d4",
+     "t": 4.0,
+     "part_masse": 0.05665404240622448,
+     "part_energie": 0.04784989767918835,
+     "l_eq_mm": 93.45185384128831,
+     "eta": 0.2348976374933392,
+     "part_flexion": 0.11848551717807028,
+     "part_peu_utile": 0.0
+    },
+    {
+     "id": "A.appui",
+     "t": 4.0,
+     "part_masse": 0.07292503335012247,
+     "part_energie": 0.10529111895117266,
+     "l_eq_mm": 132.2130290572902,
+     "eta": 0.2581780105187838,
+     "part_flexion": 0.6395364565115443,
+     "part_peu_utile": 0.10643216083675297
+    },
+    {
+     "id": "B.joue_g",
+     "t": 2.0,
+     "part_masse": 0.18655394458785152,
+     "part_energie": 0.12585679902823638,
+     "l_eq_mm": 249.24053564760607,
+     "eta": 0.19025490866435296,
+     "part_flexion": 0.06508484740593047,
+     "part_peu_utile": 0.4764041659293226
+    },
+    {
+     "id": "B.semelle",
+     "t": 2.0,
+     "part_masse": 0.1629921405174598,
+     "part_energie": 0.3584782599329313,
+     "l_eq_mm": 432.9857442391241,
+     "eta": 0.3782932268807001,
+     "part_flexion": 0.01306901017548319,
+     "part_peu_utile": 0.0
+    },
+    {
+     "id": "B.joue_d",
+     "t": 2.0,
+     "part_masse": 0.18655394458785157,
+     "part_energie": 0.12767662175480324,
+     "l_eq_mm": 251.72381961390533,
+     "eta": 0.19215049504226017,
+     "part_flexion": 0.062402590218779225,
+     "part_peu_utile": 0.4707058668289185
+    }
+   ],
+   "caracteristiques": {
+    "n_toles": 2,
+    "n_faces": 9,
+    "n_plis": 7,
+    "n_soudures": 14,
+    "n_doublages": 0,
+    "n_retours": 0,
+    "n_faces_inclinees": 1,
+    "n_evidements": 0,
+    "aire_evidements_cm2": 0.0,
+    "epaisseur_moy_mm": 2.604,
+    "aire_tole_cm2": 1143.9,
+    "part_flexion": 0.196275537843758,
+    "part_masse_peu_utile": 0.3306137483657489
+   },
+   "convergence": {
+    "taille": 8.0,
+    "kg_par_kN": 0.24629297827419072
+   },
+   "optimisation": {},
+   "pistes": [
+    "A.dos : 75 % de sa surface travaille à moins de 20 % (16 % de la masse) : candidate pour un évidement (variable « evidement ») ou une tôle plus mince."
+   ]
   }
  ],
  "lecons": [
@@ -1214,6 +1382,34 @@
    ],
    "creee": "2026-11-10 22:26",
    "maj": "2026-11-10 22:26"
+  },
+  {
+   "id": "L010",
+   "enonce": "Un caisson fermé à hauteur variable en deux tôles (dos et dessus pliés d'une pièce, joues et semelle pliées en U) porte 1 t avec moins de matière que le L + V : 0,235 kg/kN contre 0,277 à 6 mm (−15 %), 0,198 contre 0,263 à 8 mm, 0,204 contre 0,306 à 4 mm. L'optimiseur a gardé un profil droit (triangle) et le bout de la semelle juste après l'axe de la charge (x = 330) ; des poches dans les joues ne paient pas (−1 % au mieux avec une bande de 40 mm, pire en dessous).",
+   "mecanisme": "La semelle comprimée est tenue sur ses deux bords par les joues : plus de bord libre comprimé, flambement 9,9 au lieu de 3,0, et c'est la face la mieux utilisée (eta 0,38). Avec une semelle, l'effort dans les membrures reste constant quand la hauteur suit la distance à la charge, d'où le profil droit. Ce qui limite est la flexion du dos au coin haut, entre le pli du dessus et la rangée de vis z = 180 (71 % de l'énergie du dos en flexion).",
+   "portee": "Console sous effort vertical, deux tôles soudées, socle à grille de vis ; à revoir si la règle de l'essai juge la charge maximale.",
+   "source": "Claude (concept caisson galbé, optimisation et fiche F007)",
+   "statut": "observee",
+   "preuves": [
+    {
+     "type": "comparaison",
+     "fiches": [
+      "F007",
+      "F001"
+     ],
+     "grandeur": "kg_par_kN",
+     "valeurs": [
+      0.23457415654495412,
+      0.2766645581530562
+     ],
+     "attendu": "<",
+     "verdict": "conforme",
+     "note": "à maille égale (6 mm) ; même sens à 8 mm (0,198 contre 0,263) et à 4 mm (0,204 contre 0,306)",
+     "date": "2026-11-11 00:44"
+    }
+   ],
+   "creee": "2026-11-11 00:44",
+   "maj": "2026-11-11 00:44"
   }
  ],
  "experiences": [
@@ -1348,6 +1544,40 @@
    },
    "erreurs": [],
    "creee": "2026-11-10 22:21"
+  },
+  {
+   "id": "PR003",
+   "concept": "concepts/sae51_caisson_galbe.json",
+   "nom": "Caisson galbé (joues triangulaires, idée d'Iwan), optimum à 8 mm",
+   "kg_par_kN": 0.21,
+   "mode_limite": "plastification",
+   "principes": [
+    "P1",
+    "P3",
+    "P4",
+    "P5",
+    "P7"
+   ],
+   "face_critique": "A.dos",
+   "h_mm": 170.0,
+   "effort_tenu_kN": 11.1,
+   "raisonnement": "Caisson fermé : la semelle comprimée est tenue sur ses deux bords par les joues (flambement 9,8 à 8 mm), le bout de la semelle soutient le dessus sous l'appui. Ce qui limite reste la flexion du dos entre le pli du dessus (z = 200) et la rangée de vis z = 180, comme à 8 mm (0,198 kg/kN) ; à 6 mm, dérive de maille comparable à celle du L + V (+5 %).",
+   "source": "claude (après l'optimisation à 8 mm, avant le calcul à 6 mm)",
+   "experience": null,
+   "statut": "verifiee",
+   "fiche": "F007",
+   "verdict": "juste",
+   "mesure": {
+    "kg_par_kN": 0.23457415654495412,
+    "mode_limite": "plastification",
+    "ecart_pct": -10.476071578773725,
+    "valeur_juste": true,
+    "mode_juste": true,
+    "face_critique": "A.dos",
+    "lieu_juste": true
+   },
+   "erreurs": [],
+   "creee": "2026-11-11 00:36"
   }
  ],
  "journal": [
@@ -1454,6 +1684,26 @@
   {
    "date": "2026-11-10 22:26",
    "evenement": "analyse à la main de F005 et F006 (Claude) : leçon L009, preuves d'expérience de L007 jugées non concluantes (mécanisme différent), expérience E004 prévue"
+  },
+  {
+   "date": "2026-11-11 00:36",
+   "evenement": "prédiction PR003 enregistrée avant le calcul : PR003 (Caisson galbé (joues triangulaires, idée d'Iwan), optimum à 8 mm, P1, P3, P4, P5, P7) : prédit 0.210 kg/kN, limite plastification, point critique sur A.dos"
+  },
+  {
+   "date": "2026-11-11 00:39",
+   "evenement": "fiche F007 : F007 Caisson galbé (idée d'Iwan, joues triangulaires) : 0.235 kg/kN = masse 2.34 kg / 10.0 kN tenus ; L_eq 1536 mm, eta 0.219, flexion 20 % ; flambement 9.92 ; limite : la plastification (contrainte au point critique)"
+  },
+  {
+   "date": "2026-11-11 00:39",
+   "evenement": "prédiction PR003 : PR003 (Caisson galbé (joues triangulaires, idée d'Iwan), optimum à 8 mm, P1, P3, P4, P5, P7) : prédit 0.210 kg/kN, limite plastification, point critique sur A.dos -> F007 : 0.235 kg/kN, limite plastification, point critique sur A.dos (lieu juste) (écart -10 %), juste"
+  },
+  {
+   "date": "2026-11-11 00:44",
+   "evenement": "leçon L010 (hypothese) : Un caisson fermé à hauteur variable en deux tôles (dos et dessus pliés d'une pièce, joues et semelle pliées en U) porte 1 t avec moins de matière que le L + V : 0,235 kg/kN contre 0,277 à 6 mm (−15 %), 0,198 contre 0,263 à 8 mm, 0,204 contre 0,306 à 4 mm. L'optimiseur a gardé un profil droit (triangle) et le bout de la semelle juste après l'axe de la charge (x = 330) ; des poches dans les joues ne paient pas (−1 % au mieux avec une bande de 40 mm, pire en dessous)."
+  },
+  {
+   "date": "2026-11-11 00:44",
+   "evenement": "concept caisson galbé : optimisation 200 essais à 8 mm (0,198 kg/kN), fiche F007 à 6 mm, prédiction PR003 juste, leçon L010"
   }
  ]
 }

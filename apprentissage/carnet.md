@@ -1,11 +1,12 @@
 # Carnet d'apprentissage de Gabarit
 
-6 fiche(s), 9 leçon(s), 4 expérience(s), 2 prédiction(s) physique(s).
+7 fiche(s), 10 leçon(s), 4 expérience(s), 3 prédiction(s) physique(s).
 
 ## Concepts mesurés
 
 | Fiche | Concept | Faisable | kg/kN | Masse (kg) | Effort tenu (kN) | L_eq (mm) | eta | Flexion | Flambement | Limite | Parent |
 |---|---|---|---|---|---|---|---|---|---|---|---|
+| F007 | Caisson galbé (joues triangulaires, idée d'Iwan), optimum à 8 mm | oui | 0.2346 | 2.338 | 9.97 | 1536 | 0.219 | 20 % | 9.92 | la plastification (contrainte au point critique) | - |
 | F002 | L + V, poche de 45 cm² au milieu du dessus (première ESO, 8 mm) | oui | 0.2740 | 4.199 | 15.32 | 1847 | 0.225 | 22 % | 3.03 | le flambement | F001 |
 | F001 | L + V (idée d'Iwan) | oui | 0.2767 | 4.376 | 15.82 | 1852 | 0.224 | 22 % | 3.04 | le flambement | - |
 | F003 | L + V, poche de 46 cm² au milieu du dessus (ESO 15 %, 6 mm) | oui | 0.2849 | 4.195 | 14.72 | 1867 | 0.219 | 24 % | 3.02 | le flambement | F001 |
@@ -40,6 +41,8 @@
 - **L009** (observee, Claude (analyse des fiches F005 et F006)) : Sur L + V, plier la diagonale en U mince (2 ou 3 mm) supprime son flambement (facteur 3,4 puis 9,4), mais le point critique passe au pied de la bielle, au pli entre la diagonale et la jambe, là où s'arrêtent les retours : 344 MPa en 2 mm, 274 MPa en 3 mm, contre 135 à 146 MPa sous l'appui. Amincir la bielle sans dessiner son pied fait perdre plus d'effort tenu que de masse. *Mécanisme* : La bielle pousse environ 24 kN sous 1 t. À son pied, cette poussée tourne dans un pli vers une jambe aussi mince qu'elle, et les retours du U s'arrêtent au pli : l'effort passe par le coin de l'âme, en flexion locale. *Portée* : Bielles minces pliées dont le pied est un pli vers une autre face. En 5 mm (F001), ce pli tenait. *Preuves* : 2 observation(s) écrite(s) à la main (2 dans son sens).
   - observation (F005), conforme : fiche F005 (U de 2 mm) : 344 MPa sur V.jambe à 1 mm du pli avec V.diag et d'un bord libre, effort tenu 6,7 kN ; flambement 3,43 (3,53 prévu par predimensionner pour le voilement de l'âme)
   - observation (F006), conforme : fiche F006 (U de 3 mm) : 274 MPa sur V.diag à 1 mm du pli avec V.jambe et du pli avec V.retour_diag_g, effort tenu 8,4 kN ; flambement 9,36 ; L.dessus culmine à 135 MPa
+- **L010** (observee, Claude (concept caisson galbé, optimisation et fiche F007)) : Un caisson fermé à hauteur variable en deux tôles (dos et dessus pliés d'une pièce, joues et semelle pliées en U) porte 1 t avec moins de matière que le L + V : 0,235 kg/kN contre 0,277 à 6 mm (−15 %), 0,198 contre 0,263 à 8 mm, 0,204 contre 0,306 à 4 mm. L'optimiseur a gardé un profil droit (triangle) et le bout de la semelle juste après l'axe de la charge (x = 330) ; des poches dans les joues ne paient pas (−1 % au mieux avec une bande de 40 mm, pire en dessous). *Mécanisme* : La semelle comprimée est tenue sur ses deux bords par les joues : plus de bord libre comprimé, flambement 9,9 au lieu de 3,0, et c'est la face la mieux utilisée (eta 0,38). Avec une semelle, l'effort dans les membrures reste constant quand la hauteur suit la distance à la charge, d'où le profil droit. Ce qui limite est la flexion du dos au coin haut, entre le pli du dessus et la rangée de vis z = 180 (71 % de l'énergie du dos en flexion). *Portée* : Console sous effort vertical, deux tôles soudées, socle à grille de vis ; à revoir si la règle de l'essai juge la charge maximale. *Preuves* : 1/1 comparaison(s) dans son sens.
+  - comparaison F007, F001 : kg_par_kN 0.2346 / 0.2767 (conforme) : à maille égale (6 mm) ; même sens à 8 mm (0,198 contre 0,263) et à 4 mm (0,204 contre 0,306)
 
 ## Expériences
 
@@ -54,16 +57,19 @@
 
 - PR001 (L + V, diagonale en U de 2 mm (ailes de 20 mm), P3, P4, P7) : prédit 0.410 kg/kN, limite plastification -> F005 : 0.534 kg/kN, limite plastification (écart -23 %), partielle
 - PR002 (L + V, diagonale en U de 3 mm (ailes de 20 mm), P3, P4, P7) : prédit 0.300 kg/kN, limite plastification -> F006 : 0.476 kg/kN, limite plastification (écart -37 %), partielle
+- PR003 (Caisson galbé (joues triangulaires, idée d'Iwan), optimum à 8 mm, P1, P3, P4, P5, P7) : prédit 0.210 kg/kN, limite plastification, point critique sur A.dos -> F007 : 0.235 kg/kN, limite plastification, point critique sur A.dos (lieu juste) (écart -10 %), juste
 
 Calibration des principes :
 
-- Toutes : 2 prédiction(s) vérifiée(s), 0 juste(s), 2 partielle(s), mode juste 2/2, écart moyen -30 % (absolu 30 %)
-- P3 (Comprimé veut dire plié) : 2 prédiction(s) vérifiée(s), 0 juste(s), 2 partielle(s), mode juste 2/2, écart moyen -30 % (absolu 30 %)
-- P4 (Un appui sous la charge) : 2 prédiction(s) vérifiée(s), 0 juste(s), 2 partielle(s), mode juste 2/2, écart moyen -30 % (absolu 30 %)
-- P7 (L'épaisseur suit le mode de ruine) : 2 prédiction(s) vérifiée(s), 0 juste(s), 2 partielle(s), mode juste 2/2, écart moyen -30 % (absolu 30 %)
+- Toutes : 3 prédiction(s) vérifiée(s), 1 juste(s), 2 partielle(s), mode juste 3/3, lieu juste 1/1, écart moyen -24 % (absolu 24 %)
+- P1 (Un couple plutôt que de la flexion) : 1 prédiction(s) vérifiée(s), 1 juste(s), 0 partielle(s), mode juste 1/1, lieu juste 1/1, écart moyen -10 % (absolu 10 %)
+- P3 (Comprimé veut dire plié) : 3 prédiction(s) vérifiée(s), 1 juste(s), 2 partielle(s), mode juste 3/3, lieu juste 1/1, écart moyen -24 % (absolu 24 %)
+- P4 (Un appui sous la charge) : 3 prédiction(s) vérifiée(s), 1 juste(s), 2 partielle(s), mode juste 3/3, lieu juste 1/1, écart moyen -24 % (absolu 24 %)
+- P5 (La compression passe par contact) : 1 prédiction(s) vérifiée(s), 1 juste(s), 0 partielle(s), mode juste 1/1, lieu juste 1/1, écart moyen -10 % (absolu 10 %)
+- P7 (L'épaisseur suit le mode de ruine) : 3 prédiction(s) vérifiée(s), 1 juste(s), 2 partielle(s), mode juste 3/3, lieu juste 1/1, écart moyen -24 % (absolu 24 %)
 
-## Statistiques (3 concept(s) faisable(s))
+## Statistiques (4 concept(s) faisable(s))
 
-- Sur 3 concepts faisables, la variance de ln(kg/kN) vient pour 8 % du chemin d'effort (L_eq), pour 51 % de l'utilisation de la matière (eta) et pour +41 % de leur covariance (identité vérifiée à 1e-15).
-- Bruit du maillage : le kg/kN à 6 mm s'écarte de celui à 8 mm de +4.3 % en moyenne, avec 4.4 % d'écart-type d'un concept à l'autre (6 concepts) : deux concepts à moins d'environ 12 % l'un de l'autre peuvent s'inverser avec la maille.
+- Sur 4 concepts faisables, la variance de ln(kg/kN) vient pour 117 % du chemin d'effort (L_eq), pour 3 % de l'utilisation de la matière (eta) et pour -20 % de leur covariance (identité vérifiée à 1e-15).
+- Bruit du maillage : le kg/kN à 6 mm s'écarte de celui à 8 mm de +2.9 % en moyenne, avec 5.3 % d'écart-type d'un concept à l'autre (7 concepts) : deux concepts à moins d'environ 15 % l'un de l'autre peuvent s'inverser avec la maille.
 - Moins de cinq concepts faisables : pas encore de recherche de liens avec les caractéristiques.

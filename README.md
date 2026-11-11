@@ -195,6 +195,27 @@ meilleures passent ensuite par l'optimiseur. Régler la fenêtre de contexte du 
 Tests hors ligne (sans clé ni réseau, faux serveur local) : `python tests/tester_concepteur.py`,
 `python tests/tester_concepteur_ouvert.py` et `python tests/tester_exploration.py`.
 
+### Le concept « caisson galbé » (`concepts/sae51_caisson_galbe.json`)
+
+Idée d'Iwan (une joue triangulaire sous un dessus) reprise en caisson fermé de deux tôles : tôle A pliée (dos vissé,
+dessus en quatre facettes, face d'appui), tôle B pliée en U (deux joues, semelle droite qui remonte du pied du dos
+jusque sous l'appui). 14 variables : épaisseurs, largeur, colonnes de vis, hauteurs du dos et de l'appui, pied de la
+semelle, début de l'appui, bout de la semelle, trois hauteurs du profil (0,5 à 2 fois le profil droit), poches des
+joues et du dos.
+
+Optimisation (200 essais, 103 faisables, 1 h 45 sur 4 coeurs) : tôles 4 + 2 mm, largeur 68 mm (vis en y = ±20),
+dessus plat à z = 200, semelle de z = 20 au dos jusqu'à x = 330, juste après l'axe de la charge ; profil droit,
+sans poche. Masse 2,34 kg.
+
+| Maille | 8 mm | 6 mm (fiche F007) | 4 mm |
+| --- | --- | --- | --- |
+| Caisson | 0,198 kg/kN | 0,235 kg/kN (10,0 kN tenus) | 0,204 kg/kN |
+| L + V | 0,263 kg/kN | 0,277 kg/kN | 0,306 kg/kN |
+
+Le caisson gagne à chaque maille (15 à 33 %). La semelle, tenue sur ses deux bords, ne flambe plus (facteur 9,9) ;
+ce qui limite est la flexion du dos au coin haut. Des poches dans les joues ne paient pas (−1 % au mieux). Leçon L010
+au carnet ; prédiction PR003 juste (`apprentissage/predictions/caisson_galbe.json`).
+
 ## Version 2 : apprendre et alléger
 
 But : que l'IA comprenne pourquoi un concept tient plus de kN par kg qu'un autre, qu'elle s'en serve pour
